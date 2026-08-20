@@ -1,0 +1,30 @@
+# dependencies
+node_modules
+
+# build output
+dist
+dist-ssr
+*.local
+
+# env / credentials - JANGAN pernah commit
+.env
+.env.*
+!.env.example
+*credential*
+*password*
+
+# data asli - JANGAN pernah commit (§ 4, § 19, § 23 requirement)
+*.xlsx
+*.xls
+*.xlsm
+!docs/**/*.xlsx
+data-real/
+
+# editor / os
+.vscode/*
+!.vscode/extensions.json
+.DS_Store
+*.log
+npm-debug.log*
+
+.agents/

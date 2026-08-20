@@ -1,0 +1,157 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+  DESIGN TOKENS — SIMPEG PPSDMPU
+  ================================
+  Arah desain: Modern Enterprise Dashboard / Premium Administrative
+  System. Biru (#3155C7) tetap identitas utama/brand, TIDAK dipakai
+  sebagai satu-satunya warna di seluruh UI — chart & status memakai
+  warna semantic (emerald/cyan/violet/amber/orange/red) secukupnya.
+
+  Tidak ada gradient pada background/card/tombol — kedalaman dibangun
+  lewat layered shadow & border tipis, bukan gradasi warna (CLAUDE.md § 4).
+
+  Mendukung Light / Dark / System theme lewat class `.dark` di <html>
+  (lihat src/hooks/useTheme.tsx) + CSS variables di bawah — TIDAK
+  memakai filter/invert.
+*/
+
+@layer base {
+  :root {
+    /* ── Light mode (default) ─────────────────────────────────────── */
+    --background: 220 43% 97%;         /* #F5F7FB */
+    --foreground: 221 38% 14%;         /* #172033 */
+
+    --card: 0 0% 100%;                 /* #FFFFFF */
+    --card-foreground: 221 38% 14%;
+
+    --primary: 226 60% 49%;            /* #3155C7 */
+    --primary-hover: 226 64% 42%;      /* #2646B0 */
+    --primary-foreground: 0 0% 100%;
+    --primary-soft: 223 100% 96%;      /* #EAF0FF */
+    --primary-soft-foreground: 226 60% 40%;
+
+    --cyan: 189 94% 43%;               /* #06B6D4 */
+    --cyan-foreground: 0 0% 100%;
+    --violet: 258 90% 66%;             /* #8B5CF6 */
+    --violet-foreground: 0 0% 100%;
+    --orange: 25 95% 53%;              /* #F97316 */
+    --orange-foreground: 0 0% 100%;
+
+    --secondary: 220 40% 95%;
+    --secondary-foreground: 221 38% 14%;
+
+    --muted: 220 40% 95%;
+    --muted-foreground: 215 16% 47%;   /* #64748B */
+
+    --accent: 223 100% 96%;            /* soft blue, dipakai utk hover/active state */
+    --accent-foreground: 226 60% 40%;
+
+    --destructive: 0 84% 60%;          /* #EF4444 */
+    --destructive-foreground: 0 0% 100%;
+
+    --success: 160 84% 39%;            /* #10B981 (emerald) */
+    --success-foreground: 0 0% 100%;
+
+    --warning: 38 92% 50%;             /* #F59E0B (amber) */
+    --warning-foreground: 221 38% 14%;
+
+    --border: 214 32% 91%;             /* #CBD5E1-ish, subtle */
+    --input: 214 32% 91%;
+    --ring: 226 60% 49%;
+
+    --radius: 0.875rem;
+  }
+
+  .dark {
+    /* ── Dark mode ─────────────────────────────────────────────────
+       Dark charcoal/slate, bukan pure black. */
+    --background: 222 47% 11%;         /* #0F172A */
+    --foreground: 210 40% 98%;         /* #F8FAFC */
+
+    --card: 217 33% 17%;               /* #1E293B */
+    --card-foreground: 210 40% 98%;
+
+    --primary: 226 68% 58%;            /* sedikit lebih terang agar kontras di gelap */
+    --primary-hover: 226 72% 66%;
+    --primary-foreground: 0 0% 100%;
+    --primary-soft: 226 38% 22%;
+    --primary-soft-foreground: 223 90% 82%;
+
+    --cyan: 189 80% 52%;
+    --cyan-foreground: 222 47% 11%;
+    --violet: 258 84% 74%;
+    --violet-foreground: 222 47% 11%;
+    --orange: 25 88% 60%;
+    --orange-foreground: 222 47% 11%;
+
+    --secondary: 216 33% 21%;          /* #243247 */
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 216 33% 21%;
+    --muted-foreground: 215 20% 65%;   /* #94A3B8 */
+
+    --accent: 226 38% 22%;
+    --accent-foreground: 223 90% 82%;
+
+    --destructive: 0 79% 66%;
+    --destructive-foreground: 222 47% 11%;
+
+    --success: 160 64% 48%;
+    --success-foreground: 222 47% 11%;
+
+    --warning: 38 92% 58%;
+    --warning-foreground: 222 47% 11%;
+
+    --border: 215 25% 27%;             /* #334155 */
+    --input: 215 25% 27%;
+    --ring: 226 68% 58%;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+    -webkit-font-smoothing: antialiased;
+    transition: background-color 200ms ease-soft, color 200ms ease-soft;
+  }
+
+  /* Scrollbar tipis, konsisten dengan estetika "premium enterprise" di kedua tema */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: hsl(var(--border));
+    border-radius: 999px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--muted-foreground) / 0.5);
+  }
+}
+
+@layer utilities {
+  /* Aksen glass tipis — dipakai TERBATAS (mis. header sticky), bukan
+     seluruh interface. Transparansi + blur, bukan gradient. Memakai
+     token --card agar otomatis menyesuaikan Light/Dark. */
+  .glass-surface {
+    background-color: hsl(var(--card) / 0.75);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+
+  .scrollbar-none {
+    scrollbar-width: none;
+  }
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
+}
