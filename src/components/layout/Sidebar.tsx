@@ -33,9 +33,6 @@ export default function Sidebar({ onNavigate }: SidebarProps) {
   return (
     <nav className="flex h-full flex-col justify-between p-4" aria-label="Navigasi utama">
       <div>
-        <p className="px-3 pb-2 pt-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70">
-          Menu
-        </p>
         <ul className="space-y-1">
           {NAV_ITEMS.map(({ to, label, icon: Icon }) => (
             <li key={to}>

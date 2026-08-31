@@ -2,23 +2,20 @@ import type { Employee, JenisKelamin, StatusKepegawaian } from '@/types/employee
 import type { LeaveRecord, LeaveYearValue } from '@/types/leave'
 
 /**
- * Data source REMOTE (Google Apps Script Web App) — lihat kontrak JSON
- * lengkap di docs/spreadsheet-integration.md.
+ * Data source REMOTE — lihat kontrak JSON lengkap di
+ * docs/spreadsheet-integration.md.
  *
  * File ini TIDAK dipakai kecuali `VITE_DATA_SOURCE=remote` (lihat
  * services/api.ts). Selama env var itu tidak diisi, aplikasi tetap
  * memakai mock data seperti sebelumnya — tidak ada perubahan perilaku.
  *
- * PENTING (keamanan): TIDAK ADA credential/API key spreadsheet yang
- * disimpan di sini. `VITE_API_URL` hanyalah alamat endpoint Apps
- * Script (bukan rahasia kriptografis) — lihat docs/spreadsheet-integration.md
- * § 8 untuk batasan model keamanan static frontend.
+ * ARSITEKTUR (setelah migrasi proxy):
+ * Frontend memanggil endpoint Vercel Serverless (/api/employees,
+ * /api/leave). Vercel Function membaca GOOGLE_APPS_SCRIPT_URL dari
+ * environment variable SERVER-SIDE dan meneruskan request ke GAS.
+ * URL GAS tidak pernah ada di JavaScript bundle yang dikirim ke browser.
  *
  * OPTIMASI PERFORMA:
- * Menggunakan endpoint `?resource=all` untuk membaca spreadsheet SEKALI
- * dan mengembalikan employees + leave dalam satu HTTP request. Ini
- * mengurangi jumlah round-trip ke GAS dari N request menjadi 1.
- *
  * In-memory promise deduplication: jika ada fetch sedang berjalan,
  * request berikutnya akan menunggu promise yang sama (bukan buat request
  * baru). Cache ini hilang saat tab di-refresh sehingga data selalu fresh.
@@ -74,54 +71,55 @@ interface RemoteLeaveYearRow {
   n?: number
 }
 
-interface RemoteAllResponse {
-  employees: RemoteEmployeeRow[]
-  leave: RemoteLeaveYearRow[]
-}
-
-function getApiUrl(): string {
-  const url = import.meta.env.VITE_API_URL
-  if (!url) {
-    throw new Error(
-      'VITE_API_URL belum diisi. Set VITE_DATA_SOURCE=mock (default) atau isi VITE_API_URL di .env untuk memakai data remote.',
-    )
-  }
-  return url
-}
+/**
+ * In-memory promise cache per session tab — hilang saat refresh.
+ * Mencegah multiple HTTP request paralel untuk data yang sama.
+ */
+let pendingEmployeesRequest: Promise<RemoteEmployeeRow[]> | null = null
+let pendingLeaveRequest: Promise<RemoteLeaveYearRow[]> | null = null
 
 /**
- * In-memory promise cache untuk satu session tab.
- * Hilang saat halaman di-refresh → data selalu fresh.
- * Tidak ada durasi kadaluarsa yang panjang.
+ * Fetch /api/employees — Vercel serverless proxy ke GAS.
+ * Path relatif agar berfungsi di semua environment (Vercel production,
+ * vercel dev, maupun Vite dev proxy).
  */
-let pendingAllRequest: Promise<RemoteAllResponse> | null = null
+function fetchEmployees(): Promise<RemoteEmployeeRow[]> {
+  if (pendingEmployeesRequest !== null) return pendingEmployeesRequest
 
-/**
- * Fetch endpoint `?resource=all` — baca spreadsheet SEKALI untuk kedua
- * resource (employees dan leave). Request berikutnya dalam session yang
- * sama akan menunggu promise yang sama (deduplication), bukan buat
- * HTTP request baru.
- */
-function fetchAll(): Promise<RemoteAllResponse> {
-  if (pendingAllRequest !== null) {
-    return pendingAllRequest
-  }
-
-  const url = `${getApiUrl()}?resource=all`
-  pendingAllRequest = fetch(url)
+  pendingEmployeesRequest = fetch('/api/employees')
     .then((response) => {
       if (!response.ok) {
-        throw new Error(`Gagal mengambil data dari spreadsheet (HTTP ${response.status}).`)
+        throw new Error(`Gagal mengambil data pegawai (HTTP ${response.status}).`)
       }
-      return response.json() as Promise<RemoteAllResponse>
+      return response.json() as Promise<RemoteEmployeeRow[]>
     })
     .catch((err: unknown) => {
-      // Reset cache saat error agar bisa retry
-      pendingAllRequest = null
+      pendingEmployeesRequest = null
       throw err
     })
 
-  return pendingAllRequest
+  return pendingEmployeesRequest
+}
+
+/**
+ * Fetch /api/leave — Vercel serverless proxy ke GAS.
+ */
+function fetchLeave(): Promise<RemoteLeaveYearRow[]> {
+  if (pendingLeaveRequest !== null) return pendingLeaveRequest
+
+  pendingLeaveRequest = fetch('/api/leave')
+    .then((response) => {
+      if (!response.ok) {
+        throw new Error(`Gagal mengambil data cuti (HTTP ${response.status}).`)
+      }
+      return response.json() as Promise<RemoteLeaveYearRow[]>
+    })
+    .catch((err: unknown) => {
+      pendingLeaveRequest = null
+      throw err
+    })
+
+  return pendingLeaveRequest
 }
 
 function toJenisKelamin(value: string | undefined): JenisKelamin | undefined {
@@ -167,16 +165,12 @@ function mapRowToEmployee(row: RemoteEmployeeRow): Employee {
     noRekening: row.noRekening,
     bank: row.bank,
     npwp: row.npwp,
-    // CATATAN (docs/spreadsheet-integration.md § 2): statusAktif belum
-    // punya sumber kolom yang dikonfirmasi. Default true kecuali Apps
-    // Script mengirim nilainya secara eksplisit - WAJIB ditinjau ulang
-    // di Checkpoint 4, bukan tebakan final.
     statusAktif: row.statusAktif ?? true,
   }
 }
 
 export async function getRemoteEmployees(): Promise<Employee[]> {
-  const { employees } = await fetchAll()
+  const employees = await fetchEmployees()
   return employees.map(mapRowToEmployee)
 }
 
@@ -188,7 +182,7 @@ export async function getRemoteEmployees(): Promise<Employee[]> {
  * hook/komponen manapun.
  */
 export async function getRemoteLeaveRecords(): Promise<LeaveRecord[]> {
-  const { leave: rows } = await fetchAll()
+  const rows = await fetchLeave()
 
   const byNip = new Map<string, LeaveRecord>()
   for (const row of rows) {

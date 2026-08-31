@@ -2,12 +2,15 @@ import { useEffect, useMemo, useState } from 'react'
 import { getEmployees } from '@/services/api'
 import type { EmployeeListItem } from '@/types/employee'
 
-const PAGE_SIZE = 5
+const PAGE_SIZE = 10
 
 /** Nilai kosong ('') berarti "Semua" - dropdown diisi dinamis dari data. */
 export type SatkerFilter = string
 export type BidangFilter = string
 export type StatusKepegawaianFilter = string
+
+/** Arah sorting kolom Nama. `null` = urutan asli (belum di-sort). */
+export type NamaSortDirection = 'asc' | 'desc' | null
 
 interface UseEmployeeListResult {
   isLoading: boolean
@@ -27,6 +30,10 @@ interface UseEmployeeListResult {
   setPage: (page: number) => void
   /** Ringkasan TIDAK terfilter (dihitung dari seluruh data), untuk summary strip halaman Pegawai. */
   summary: { total: number; totalPNS: number; totalPPPK: number }
+  /** Arah sorting kolom Nama saat ini (`null` = belum di-sort). */
+  namaSortDirection: NamaSortDirection
+  /** Toggle sorting Nama: null -> asc -> desc -> null. */
+  onToggleNamaSort: () => void
 }
 
 /**
@@ -50,6 +57,17 @@ export function useEmployeeList(
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [page, setPage] = useState(1)
+  const [namaSortDirection, setNamaSortDirection] = useState<NamaSortDirection>(null)
+
+  // Toggle sorting Nama: klik 1=A-Z, klik 2=Z-A, klik 3=kembali ke urutan
+  // default/asli API. Reset ke halaman 1 dilakukan LANGSUNG di sini (bukan
+  // lewat useEffect terpisah) supaya perubahan arah sort & halaman terjadi
+  // dalam satu batch render yang sama — tidak ada frame antara di mana
+  // tabel sempat menampilkan potongan (slice) lama dari halaman non-1.
+  const onToggleNamaSort = () => {
+    setNamaSortDirection((prev) => (prev === null ? 'asc' : prev === 'asc' ? 'desc' : null))
+    setPage(1)
+  }
 
   useEffect(() => {
     let isActive = true
@@ -96,6 +114,10 @@ export function useEmployeeList(
     const nama = namaQuery.trim().toLowerCase()
     const nip = nipQuery.trim().toLowerCase()
 
+    // .filter() TIDAK mengubah urutan elemen yang lolos filter dan TIDAK
+    // memutasi `allEmployees` — hasilnya tetap mengikuti urutan asli
+    // sebagaimana diterima dari API (`getEmployees()`), hanya dikurangi
+    // baris yang tidak lolos search/filter.
     return allEmployees.filter((e) => {
       if (nama && !e.nama.toLowerCase().includes(nama)) return false
       if (nip && !e.nip.toLowerCase().includes(nip)) return false
@@ -106,18 +128,40 @@ export function useEmployeeList(
     })
   }, [allEmployees, namaQuery, nipQuery, satkerFilter, bidangFilter, statusFilter])
 
-  // Reset ke halaman 1 setiap kali search/filter berubah.
+  // Reset ke halaman 1 setiap kali search/filter berubah. Perubahan sorting
+  // TIDAK dimasukkan di sini — itu ditangani langsung di dalam
+  // `onToggleNamaSort` di atas supaya sinkron dalam satu batch render.
   useEffect(() => {
     setPage(1)
   }, [namaQuery, nipQuery, satkerFilter, bidangFilter, statusFilter])
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
+  // `filtered` adalah dataset SUMBER yang tidak pernah diurutkan/dimutasi —
+  // ia HANYA turunan search/filter dari `allEmployees` (urutan asli API).
+  // Saat `namaSortDirection === null` (default), `sorted` mengembalikan
+  // `filtered` APA ADANYA — tanpa ada bekas array hasil sort sebelumnya
+  // yang tercampur/tertinggal, karena `filtered` sendiri tidak pernah
+  // disentuh oleh operasi sort/reverse manapun.
+  //
+  // Saat asc/desc aktif: SELALU sort di atas SALINAN (`[...filtered]`),
+  // bukan `.sort()` langsung pada `filtered`/`allEmployees` — sehingga
+  // dataset asli tetap utuh untuk dipakai kembali saat sorting direset.
+  // Sorting diterapkan pada SELURUH dataset hasil filter (bukan hanya
+  // baris yang sedang tampil di halaman aktif), baru kemudian dipotong
+  // per halaman di bawah.
+  const sorted = useMemo(() => {
+    if (namaSortDirection === null) return filtered
+    const collator = new Intl.Collator('id', { sensitivity: 'base' })
+    const result = [...filtered].sort((a, b) => collator.compare(a.nama, b.nama))
+    return namaSortDirection === 'desc' ? result.reverse() : result
+  }, [filtered, namaSortDirection])
+
+  const totalPages = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE))
   const safePage = Math.min(page, totalPages)
 
   const pageItems = useMemo(() => {
     const start = (safePage - 1) * PAGE_SIZE
-    return filtered.slice(start, start + PAGE_SIZE)
-  }, [filtered, safePage])
+    return sorted.slice(start, start + PAGE_SIZE)
+  }, [sorted, safePage])
 
   // Ringkasan dari SELURUH data (bukan hasil filter) — dipakai summary
   // strip di atas tabel Pegawai. Murni turunan dari statusKepegawaian
@@ -144,5 +188,7 @@ export function useEmployeeList(
     totalPages,
     setPage,
     summary,
+    namaSortDirection,
+    onToggleNamaSort,
   }
 }

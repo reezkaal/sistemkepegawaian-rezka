@@ -1,35 +1,46 @@
 /**
- * Donut Chart — Distribusi Tingkat Pendidikan Terakhir pegawai.
- * Menampilkan jumlah + persentase di legend list kanan.
- * Warna solid, tanpa gradient (CLAUDE.md § 4).
+ * PendidikanChart — Distribusi Tingkat Pendidikan Terakhir.
+ *
+ * Vertical bar/column chart full-width, menampilkan SELURUH kategori
+ * pendidikan aktual dari spreadsheet (termasuk "(Belum Terisi)"), sudah
+ * diurutkan terbesar→terkecil oleh getEmployeeChartData(). Warna indigo
+ * untuk kategori terisi, abu-abu untuk "(Belum Terisi)" — konsisten
+ * dengan palet chart lain (Golongan=amber, Satker/Bidang=teal, Usia=violet).
+ *
+ * Struktur mengikuti pola GolonganChart (vertical column mandiri, tidak
+ * saling bergantung) supaya perubahan di sini tidak berisiko terhadap
+ * chart Golongan yang sudah stabil.
  */
 
-import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts'
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  LabelList,
+  Cell,
+  CartesianGrid,
+} from 'recharts'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import type { PendidikanStat } from '@/types/dashboard'
-
-const COLORS = [
-  'hsl(var(--primary))',
-  'hsl(var(--cyan))',
-  'hsl(var(--success))',
-  'hsl(var(--warning))',
-  'hsl(226 60% 70%)',
-  'hsl(var(--muted-foreground))',
-]
 
 interface Props {
   data: PendidikanStat[]
   isLoading: boolean
+  totalPegawai?: number
 }
 
 interface CustomTooltipProps {
   active?: boolean
-  payload?: Array<{ payload: PendidikanStat }>
+  payload?: Array<{ value: number; payload: PendidikanStat }>
 }
 
 function CustomTooltip({ active, payload }: CustomTooltipProps) {
   if (!active || !payload?.length) return null
   const item = payload[0].payload
+  const isMuted = item.tingkat === '(Belum Terisi)'
   return (
     <div
       style={{
@@ -43,107 +54,153 @@ function CustomTooltip({ active, payload }: CustomTooltipProps) {
     >
       <p style={{ fontWeight: 600, color: 'hsl(var(--foreground))' }}>{item.tingkat}</p>
       <p style={{ color: 'hsl(var(--muted-foreground))', marginTop: 2 }}>
-        {item.jumlah} pegawai · {item.persentase}%
+        {item.jumlah} pegawai
       </p>
+      {isMuted && (
+        <p style={{ color: 'hsl(var(--muted-foreground))', marginTop: 4, fontSize: 11 }}>
+          Belum terisi di spreadsheet
+        </p>
+      )}
     </div>
   )
 }
 
-function ChartSkeleton() {
+function SkeletonBars() {
   return (
-    <div className="flex h-44 items-center gap-6">
-      <div className="h-32 w-32 shrink-0 animate-pulse rounded-full bg-accent" />
-      <div className="flex-1 space-y-2">
-        {[1, 2, 3].map((i) => (
-          <div key={i} className="h-4 animate-pulse rounded bg-accent" />
-        ))}
-      </div>
+    <div className="flex items-end gap-2 px-2" style={{ height: 260 }}>
+      {Array.from({ length: 8 }).map((_, i) => (
+        <div
+          key={i}
+          className="flex-1 animate-pulse rounded-t-sm bg-accent"
+          style={{ height: `${30 + (i % 5) * 18}%` }}
+        />
+      ))}
     </div>
   )
 }
 
-export default function PendidikanChart({ data, isLoading }: Props) {
-  if (isLoading) {
-    return (
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-semibold">Distribusi Pendidikan</CardTitle>
-          <CardDescription className="text-xs">Tingkat pendidikan terakhir pegawai</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <ChartSkeleton />
-        </CardContent>
-      </Card>
-    )
-  }
+function EmptyState() {
+  return (
+    <div className="flex h-52 items-center justify-center">
+      <p className="text-sm text-muted-foreground">Belum ada data pendidikan.</p>
+    </div>
+  )
+}
 
-  if (data.length === 0) {
-    return (
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-semibold">Distribusi Pendidikan</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm text-muted-foreground">Belum ada data pendidikan.</p>
-        </CardContent>
-      </Card>
-    )
-  }
+interface CustomTickProps {
+  x?: number
+  y?: number
+  payload?: { value: string }
+}
+
+function CustomXTick({ x = 0, y = 0, payload }: CustomTickProps) {
+  const isMuted = payload?.value === '(Belum Terisi)'
+  return (
+    <g transform={`translate(${x},${y})`}>
+      <text
+        x={0}
+        y={0}
+        dy={10}
+        textAnchor="end"
+        transform="rotate(-40)"
+        fontSize={11}
+        fill={isMuted ? 'hsl(var(--muted-foreground))' : 'hsl(var(--foreground))'}
+      >
+        {payload?.value}
+      </text>
+    </g>
+  )
+}
+
+export default function PendidikanChart({ data, isLoading, totalPegawai }: Props) {
+  const total = totalPegawai ?? data.reduce((s, d) => s + d.jumlah, 0)
+  const terisi = data
+    .filter((d) => d.tingkat !== '(Belum Terisi)')
+    .reduce((s, d) => s + d.jumlah, 0)
+  const maxVal = data.reduce((m, d) => Math.max(m, d.jumlah), 0)
+
+  // Data sudah terurut terbesar→terkecil dari getEmployeeChartData(),
+  // hanya pastikan "(Belum Terisi)" tampil paling akhir agar konsisten
+  // dengan GolonganChart.
+  const sorted = [...data].sort((a, b) => {
+    if (a.tingkat === '(Belum Terisi)') return 1
+    if (b.tingkat === '(Belum Terisi)') return -1
+    return b.jumlah - a.jumlah
+  })
+
+  const yDomain: [number, number] = [0, Math.ceil(maxVal * 1.3)]
 
   return (
     <Card>
       <CardHeader className="pb-2">
-        <CardTitle className="text-sm font-semibold">Distribusi Pendidikan</CardTitle>
-        <CardDescription className="text-xs">Tingkat pendidikan terakhir pegawai</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="flex items-center gap-4">
-          {/* Donut */}
-          <div className="h-44 w-44 shrink-0">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={data}
-                  dataKey="jumlah"
-                  nameKey="tingkat"
-                  cx="50%"
-                  cy="50%"
-                  innerRadius="48%"
-                  outerRadius="70%"
-                  paddingAngle={3}
-                  cornerRadius={5}
-                  strokeWidth={0}
-                  isAnimationActive
-                  animationDuration={700}
-                  animationEasing="ease-out"
-                >
-                  {data.map((_, i) => (
-                    <Cell key={i} fill={COLORS[i % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip content={<CustomTooltip />} />
-              </PieChart>
-            </ResponsiveContainer>
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <CardTitle className="text-sm font-semibold">Distribusi Pendidikan</CardTitle>
+            <CardDescription className="mt-0.5 text-xs">
+              {terisi} dari {total} pegawai memiliki data pendidikan · abu-abu = belum terisi
+            </CardDescription>
           </div>
-
-          {/* Legend list */}
-          <ul className="min-w-0 flex-1 space-y-2.5">
-            {data.map((item, i) => (
-              <li key={item.tingkat} className="flex items-center justify-between gap-2 text-xs">
-                <div className="flex min-w-0 items-center gap-2">
-                  <span
-                    className="inline-block h-2.5 w-2.5 shrink-0 rounded-full"
-                    style={{ background: COLORS[i % COLORS.length] }}
-                  />
-                  <span className="truncate text-foreground">{item.tingkat}</span>
-                </div>
-                <span className="shrink-0 font-medium text-muted-foreground">
-                  {item.jumlah} <span className="text-muted-foreground/70">({item.persentase}%)</span>
-                </span>
-              </li>
-            ))}
-          </ul>
+          <span className="shrink-0 rounded-md bg-indigo/10 px-2 py-1 text-xs font-semibold text-indigo">
+            {data.length} kategori
+          </span>
         </div>
+      </CardHeader>
+      <CardContent className="pb-6">
+        {isLoading ? (
+          <SkeletonBars />
+        ) : data.length === 0 ? (
+          <EmptyState />
+        ) : (
+          <ResponsiveContainer width="100%" height={280}>
+            <BarChart
+              data={sorted}
+              margin={{ top: 16, right: 12, left: 0, bottom: 60 }}
+              barCategoryGap="28%"
+            >
+              <CartesianGrid vertical={false} stroke="hsl(var(--border))" strokeDasharray="3 3" />
+              <XAxis
+                dataKey="tingkat"
+                tick={<CustomXTick />}
+                tickLine={false}
+                axisLine={{ stroke: 'hsl(var(--border))' }}
+                interval={0}
+              />
+              <YAxis
+                domain={yDomain}
+                tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
+                tickLine={false}
+                axisLine={false}
+                allowDecimals={false}
+                width={32}
+              />
+              <Tooltip content={<CustomTooltip />} cursor={{ fill: 'hsl(var(--accent))' }} />
+              <Bar
+                dataKey="jumlah"
+                radius={[4, 4, 0, 0]}
+                maxBarSize={40}
+                isAnimationActive={true}
+                animationDuration={600}
+                animationEasing="ease-out"
+              >
+                {sorted.map((d, index) => (
+                  <Cell
+                    key={index}
+                    fill={
+                      d.tingkat === '(Belum Terisi)'
+                        ? 'hsl(var(--muted-foreground) / 0.35)'
+                        : 'hsl(var(--indigo))'
+                    }
+                  />
+                ))}
+                <LabelList
+                  dataKey="jumlah"
+                  position="top"
+                  style={{ fontSize: 11, fontWeight: 600, fill: 'hsl(var(--foreground))' }}
+                />
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        )}
       </CardContent>
     </Card>
   )

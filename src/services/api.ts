@@ -7,18 +7,22 @@ import type {
   LeaveYearAggregate,
 } from '@/types/dashboard'
 import { mockEmployees } from '@/mock/employees'
-import { mockLeaveRecords, mockLeaveTypeSummary, mockNipSedangCuti, mockLeaveHistory } from '@/mock/leave'
+import { mockLeaveRecords, mockLeaveTypeSummary, mockLeaveHistory } from '@/mock/leave'
 import { getRemoteEmployees, getRemoteLeaveRecords } from '@/services/remoteDataSource'
 
 /**
  * Service layer terpusat untuk semua akses data.
  *
  * Sumber data ditentukan oleh env var `VITE_DATA_SOURCE` ('mock' —
- * default, atau 'remote' untuk Google Apps Script - lihat
- * docs/spreadsheet-integration.md). SEMUA fungsi yang diekspor di
- * bawah TIDAK berubah signature/perilakunya terhadap pemanggilnya
- * (hook) terlepas dari sumber data - hook/komponen tidak perlu tahu
- * atau berubah sama sekali.
+ * default, atau 'remote' untuk mengambil data dari Vercel Serverless
+ * proxy — lihat docs/spreadsheet-integration.md). SEMUA fungsi yang
+ * diekspor di bawah TIDAK berubah signature/perilakunya terhadap
+ * pemanggilnya (hook) terlepas dari sumber data - hook/komponen tidak
+ * perlu tahu atau berubah sama sekali.
+ *
+ * Mode remote: frontend memanggil /api/employees dan /api/leave.
+ * Vercel Function membaca GOOGLE_APPS_SCRIPT_URL dari environment
+ * variable server-side — URL GAS tidak bocor ke browser.
  *
  * `getLeaveHistory`/`getLeaveHistoryByNip`/`getLeaveTypeSummary` TETAP
  * mock (lihat docs/spreadsheet-integration.md § 5) - tidak ada kolom
@@ -148,29 +152,18 @@ export async function getLeaveHistoryByNip(nip: string): Promise<LeaveHistoryEnt
 }
 
 /**
- * Ringkasan statistik untuk kartu Dashboard (Checkpoint 3A, diperluas
- * Checkpoint 3D): Total Pegawai, Pegawai PNS, Pegawai PPPK, Total Cuti,
- * ditambah Pegawai Aktif & Pegawai Sedang Cuti untuk section Informasi
- * Cepat. totalPNS/totalPPPK dihitung dari `Employee.statusKepegawaian`
- * yang sudah ada — bukan data atau struktur baru.
+ * Ringkasan statistik KPI untuk Dashboard.
+ * Hanya menggunakan data yang tersedia dari spreadsheet DUK melalui GAS.
+ * Field mock (pegawaiAktif, pegawaiSedangCuti, totalCuti) telah dihapus
+ * karena tidak didukung data spreadsheet.
  */
 export async function getDashboardSummary(): Promise<DashboardSummary> {
   const employees = await getRawEmployees()
   const totalPegawai = employees.length
-  const pegawaiAktif = employees.filter((e) => e.statusAktif).length
-  const pegawaiSedangCuti = mockNipSedangCuti.length
-  const totalCuti = mockLeaveTypeSummary.reduce((sum, item) => sum + item.jumlah, 0)
   const totalPNS = employees.filter((e) => e.statusKepegawaian === 'PNS').length
   const totalPPPK = employees.filter((e) => e.statusKepegawaian === 'PPPK').length
 
-  return {
-    totalPegawai,
-    pegawaiAktif,
-    pegawaiSedangCuti,
-    totalCuti,
-    totalPNS,
-    totalPPPK,
-  }
+  return { totalPegawai, totalPNS, totalPPPK }
 }
 
 /**
@@ -213,27 +206,38 @@ export async function getLeaveTypeSummary(): Promise<LeaveTypeSummaryItem[]> {
 }
 
 /**
- * Data untuk 5 chart analitik kepegawaian di Dashboard (Style Charts update).
- * Semua dihitung secara dinamis dari data mentah (mock ATAU remote,
- * lihat getRawEmployees) — tidak ada hardcode angka.
- * Distribusi: Status Kepegawaian, Golongan, Satker, Bidang/Bagian, Pendidikan.
+ * Data untuk chart analitik kepegawaian di Dashboard.
+ * Semua dihitung secara dinamis dari data mentah (remote GAS/Spreadsheet).
+ * Distribusi: Status Kepegawaian, Golongan, Satker, Bidang/Bagian,
+ * Pendidikan, Gender, Usia.
+ *
+ * KONVENSI kosong:
+ * - Data tidak terisi atau string kosong → "(Belum Terisi)"
+ * - Data berupa "-" literal → "(Belum Terisi)"
+ * Dengan demikian label "(Belum Terisi)" mewakili data yang belum diisi
+ * di spreadsheet, bukan kategori substantif.
  */
 export async function getEmployeeChartData(): Promise<EmployeeChartData> {
   const employees = await getRawEmployees()
   const total = employees.length
 
-  // Helper: hitung frekuensi dari array nilai string
+  // Helper: hitung frekuensi, kosong/dash → "(Belum Terisi)"
   function countBy(fn: (e: Employee) => string | undefined): Record<string, number> {
     const counts: Record<string, number> = {}
     for (const e of employees) {
-      const key = fn(e)?.trim() || '-'
+      const raw = fn(e)?.trim()
+      const key = (!raw || raw === '-') ? '(Belum Terisi)' : raw
       counts[key] = (counts[key] ?? 0) + 1
     }
     return counts
   }
 
-  // 1. Status Kepegawaian (PNS / PPPK)
-  const statusCounts = countBy((e) => e.statusKepegawaian)
+  // 1. Status Kepegawaian — PNS / PPPK / Tanpa Status
+  //    Kosong bukan berarti nonaktif, hanya belum terisi di spreadsheet.
+  const statusCounts = countBy((e) => {
+    const s = e.statusKepegawaian?.trim()
+    return (!s || s === '-') ? 'Tanpa Status' : s
+  })
   const statusKepegawaian = Object.entries(statusCounts)
     .map(([status, jumlah]) => ({
       status,
@@ -270,5 +274,60 @@ export async function getEmployeeChartData(): Promise<EmployeeChartData> {
     }))
     .sort((a, b) => b.jumlah - a.jumlah)
 
-  return { statusKepegawaian, golongan, satker, bidang, pendidikan }
+  // 6. Gender — Laki-laki / Perempuan / (Belum Terisi)
+  const genderMap: Record<string, number> = { 'Laki-laki': 0, 'Perempuan': 0, '(Belum Terisi)': 0 }
+  for (const e of employees) {
+    const jk = e.jenisKelamin?.trim()
+    if (jk === 'L') genderMap['Laki-laki']++
+    else if (jk === 'P') genderMap['Perempuan']++
+    else genderMap['(Belum Terisi)']++
+  }
+  const gender = Object.entries(genderMap)
+    .map(([label, jumlah]) => ({
+      label,
+      jumlah,
+      persentase: Math.round((jumlah / total) * 100),
+    }))
+
+  // 7. Distribusi Usia dari tanggalLahir
+  //    Pegawai tanpa tanggalLahir valid dikecualikan (dilaporkan via usiaDataValid).
+  const AGE_BUCKETS: Array<{ label: string; min: number; max: number }> = [
+    { label: '< 30 Tahun',  min: 0,  max: 29  },
+    { label: '30–39 Tahun', min: 30, max: 39  },
+    { label: '40–49 Tahun', min: 40, max: 49  },
+    { label: '50–59 Tahun', min: 50, max: 59  },
+    { label: '60+ Tahun',   min: 60, max: 999 },
+  ]
+  const usiaCounts: Record<string, number> = Object.fromEntries(
+    AGE_BUCKETS.map((b) => [b.label, 0]),
+  )
+  let usiaDataValid = 0
+  const today = new Date()
+
+  for (const e of employees) {
+    if (!e.tanggalLahir) continue
+    const dob = new Date(e.tanggalLahir)
+    if (isNaN(dob.getTime())) continue
+    let age = today.getFullYear() - dob.getFullYear()
+    const m = today.getMonth() - dob.getMonth()
+    if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) age--
+    const bucket = AGE_BUCKETS.find((b) => age >= b.min && age <= b.max)
+    if (!bucket) continue
+    usiaCounts[bucket.label]++
+    usiaDataValid++
+  }
+
+  const usia = AGE_BUCKETS.map((b) => ({ kelompok: b.label, jumlah: usiaCounts[b.label] }))
+
+  return {
+    statusKepegawaian,
+    golongan,
+    satker,
+    bidang,
+    pendidikan,
+    gender,
+    usia,
+    usiaDataValid,
+    totalPegawai: total,
+  }
 }

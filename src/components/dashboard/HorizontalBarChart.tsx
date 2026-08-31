@@ -1,11 +1,12 @@
-/**
- * Horizontal Bar Chart — Reusable untuk Golongan, Satker, Bidang/Bagian.
+﻿/**
+ * Horizontal Bar Chart — Reusable untuk Satker, Bidang/Bagian, Pendidikan.
  *
  * - Sorted dari terbesar ke terkecil (dilakukan di service layer)
  * - Value ditampilkan di ujung kanan bar
  * - Bar radius rounded
  * - Tooltip modern: nama kategori + jumlah pegawai
- * - Warna solid, tanpa gradient (CLAUDE.md § 4)
+ * - "(Belum Terisi)" otomatis muted
+ * - barColor prop untuk warna per-use-case (teal=satker/bidang, indigo=pendidikan)
  */
 
 import {
@@ -34,6 +35,11 @@ interface HorizontalBarChartProps {
   barColor?: string
   /** Tinggi chart dalam px, default otomatis berdasarkan jumlah item */
   height?: number
+  /**
+   * Daftar label yang ditampilkan dengan warna muted (abu-abu).
+   * Default: "(Belum Terisi)" selalu dimuted otomatis.
+   */
+  mutedLabels?: string[]
 }
 
 // Bar height per item + padding
@@ -94,21 +100,24 @@ export default function HorizontalBarChart({
   isLoading,
   barColor = 'hsl(var(--primary))',
   height,
+  mutedLabels = [],
 }: HorizontalBarChartProps) {
   const chartHeight = height ?? Math.max(data.length * ROW_HEIGHT, 80)
 
-  // Max value untuk menentukan domain XAxis
+  const allMutedLabels = new Set(['(Belum Terisi)', ...mutedLabels])
+  const isLabelMuted = (label: string) => allMutedLabels.has(label)
+
   const maxVal = data.reduce((m, d) => Math.max(m, d.jumlah), 0)
-  // Tambah 20% padding kanan agar label tidak terpotong
-  const xDomain: [number, number] = [0, Math.ceil(maxVal * 1.35)]
+  // 35% padding kanan agar label tidak terpotong
+  const xDomain: [number, number] = [0, Math.ceil(maxVal * 1.4)]
 
   return (
-    <Card>
+    <Card className="flex h-full flex-col">
       <CardHeader className="pb-2">
         <CardTitle className="text-sm font-semibold">{title}</CardTitle>
         {description && <CardDescription className="text-xs">{description}</CardDescription>}
       </CardHeader>
-      <CardContent>
+      <CardContent className="flex flex-1 flex-col justify-center">
         {isLoading ? (
           <SkeletonRows count={4} />
         ) : data.length === 0 ? (
@@ -118,7 +127,7 @@ export default function HorizontalBarChart({
             <BarChart
               layout="vertical"
               data={data}
-              margin={{ top: 2, right: 36, left: 4, bottom: 2 }}
+              margin={{ top: 2, right: 48, left: 4, bottom: 2 }}
               barCategoryGap="32%"
             >
               <CartesianGrid
@@ -135,7 +144,7 @@ export default function HorizontalBarChart({
               <YAxis
                 type="category"
                 dataKey="label"
-                width={110}
+                width={130}
                 tick={{ fontSize: 12, fill: 'hsl(var(--foreground))' }}
                 tickLine={false}
                 axisLine={false}
@@ -149,11 +158,11 @@ export default function HorizontalBarChart({
                 animationDuration={600}
                 animationEasing="ease-out"
               >
-                {data.map((_, index) => (
+                {data.map((d, index) => (
                   <Cell
                     key={index}
-                    fill={barColor}
-                    fillOpacity={Math.max(0.45, 1 - index * 0.12)}
+                    fill={isLabelMuted(d.label) ? 'hsl(var(--muted-foreground) / 0.4)' : barColor}
+                    fillOpacity={isLabelMuted(d.label) ? 1 : Math.max(0.55, 1 - index * 0.08)}
                   />
                 ))}
                 <LabelList

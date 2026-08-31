@@ -8,14 +8,25 @@
  * karena data tersebut tidak tersedia di sheet "NILAI CUTI TAHUNAN" DUK.
  */
 
-import { CalendarOff } from 'lucide-react'
-import type { LeaveTableRow } from '@/hooks/useLeaveTable'
+import { CalendarOff, ArrowUp, ArrowDown, ArrowUpDown } from 'lucide-react'
+import type { LeaveTableRow, NamaSortDirection } from '@/hooks/useLeaveTable'
 
 interface LeaveYearTableProps {
   items: LeaveTableRow[]
   tahun: number
   isLoading: boolean
   error: string | null
+  /** Arah sorting kolom Nama Pegawai saat ini (`null` = urutan default/asli). */
+  namaSortDirection: NamaSortDirection
+  /** Toggle sorting Nama: klik 1=A-Z, klik 2=Z-A, klik 3=kembali ke default. */
+  onToggleNamaSort: () => void
+}
+
+/** Indikator arah sorting kolom Nama: default=↕, A-Z=↑, Z-A=↓. */
+function NamaSortIcon({ direction }: { direction: NamaSortDirection }) {
+  if (direction === 'asc') return <ArrowUp className="h-3.5 w-3.5" aria-hidden="true" />
+  if (direction === 'desc') return <ArrowDown className="h-3.5 w-3.5" aria-hidden="true" />
+  return <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground/60" aria-hidden="true" />
 }
 
 const COLUMN_COUNT = 5
@@ -37,14 +48,31 @@ function fmtVal(v: number | undefined): string {
   return v === undefined ? '—' : `${v} hari`
 }
 
-export default function LeaveYearTable({ items, tahun, isLoading, error }: LeaveYearTableProps) {
+export default function LeaveYearTable({
+  items,
+  tahun,
+  isLoading,
+  error,
+  namaSortDirection,
+  onToggleNamaSort,
+}: LeaveYearTableProps) {
   return (
     <div className="overflow-x-auto">
       <table className="w-full min-w-[620px] border-collapse text-left text-sm">
         <thead>
           <tr className="border-b border-border bg-muted/60 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
             <th scope="col" className="px-4 py-3">
-              Nama Pegawai
+              <button
+                type="button"
+                onClick={onToggleNamaSort}
+                className={`flex items-center gap-1 uppercase tracking-wider transition-colors hover:text-foreground ${
+                  namaSortDirection ? 'text-foreground' : 'text-muted-foreground'
+                }`}
+                aria-label={`Urutkan berdasarkan Nama Pegawai ${namaSortDirection === 'asc' ? '(A-Z, klik untuk Z-A)' : namaSortDirection === 'desc' ? '(Z-A, klik untuk urutan default)' : '(urutan default, klik untuk A-Z)'}`}
+              >
+                Nama Pegawai
+                <NamaSortIcon direction={namaSortDirection} />
+              </button>
             </th>
             <th scope="col" className="px-4 py-3">
               NIP
@@ -90,7 +118,13 @@ export default function LeaveYearTable({ items, tahun, isLoading, error }: Leave
             !error &&
             items.map((row) => (
               <tr
-                key={`${row.nip}-${row.tahun}`}
+                // NIP kosong pada ~99% data DUK asli (lihat audit sorting bug) —
+                // key lama `${nip}-${tahun}` collide besar-besaran saat NIP
+                // kosong (tahun tetap sama untuk semua baris di satu halaman),
+                // sehingga React salah mencocokkan/duplikasi baris saat urutan
+                // berubah (sorting Nama A-Z/Z-A/default). Nama unik di seluruh
+                // data DUK, jadi digabung sebagai bagian key yang membedakan.
+                key={`${row.nip || 'no-nip'}-${row.nama}-${row.tahun}`}
                 className="transition-colors odd:bg-card even:bg-muted/40 hover:bg-primary-soft/50"
               >
                 <td className="px-4 py-3 font-medium text-foreground">{row.nama}</td>

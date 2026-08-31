@@ -48,6 +48,18 @@ export default {
           DEFAULT: 'hsl(var(--orange))',
           foreground: 'hsl(var(--orange-foreground))',
         },
+        amber: {
+          DEFAULT: 'hsl(var(--amber))',
+          foreground: 'hsl(var(--amber-foreground))',
+        },
+        teal: {
+          DEFAULT: 'hsl(var(--teal))',
+          foreground: 'hsl(var(--teal-foreground))',
+        },
+        indigo: {
+          DEFAULT: 'hsl(var(--indigo))',
+          foreground: 'hsl(var(--indigo-foreground))',
+        },
         secondary: {
           DEFAULT: 'hsl(var(--secondary))',
           foreground: 'hsl(var(--secondary-foreground))',

@@ -26,11 +26,17 @@ export default function Leave() {
   // Default tahun: tahun pertama yang ada datanya di DUK (2024)
   const [tahunFilter, setTahunFilter] = useState<number>(TAHUN_OPTIONS[0])
 
-  const { isLoading, error, pageItems, totalResults, page, totalPages, setPage } = useLeaveTable(
-    namaQuery,
-    nipQuery,
-    tahunFilter,
-  )
+  const {
+    isLoading,
+    error,
+    pageItems,
+    totalResults,
+    page,
+    totalPages,
+    setPage,
+    namaSortDirection,
+    onToggleNamaSort,
+  } = useLeaveTable(namaQuery, nipQuery, tahunFilter)
 
   return (
     <div className="space-y-4">
@@ -74,6 +80,8 @@ export default function Leave() {
           tahun={tahunFilter}
           isLoading={isLoading}
           error={error}
+          namaSortDirection={namaSortDirection}
+          onToggleNamaSort={onToggleNamaSort}
         />
         <LeavePagination
           page={page}

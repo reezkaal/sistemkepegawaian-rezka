@@ -1,24 +1,19 @@
 /**
- * Types khusus untuk kebutuhan tampilan Dashboard (Checkpoint 3A).
+ * Types khusus untuk kebutuhan tampilan Dashboard.
  *
- * CATATAN: `pegawaiSedangCuti`, `totalCuti`, dan rekap per jenis cuti di
- * sini adalah ANGKA RINGKASAN untuk kebutuhan tampilan mock saja. Ini
- * TIDAK berkaitan dengan struktur N-2/N-1/N di `types/leave.ts` yang
- * arti bisnisnya belum dikonfirmasi (lihat docs/data-mapping.md) - jenis
- * cuti (Tahunan/Sakit/Melahirkan/Besar) di sini murni data contoh untuk
- * chart "Rekap Cuti Berdasarkan Jenis".
- *
- * Dashboard chart analytics (Style Charts update):
- * Data diturunkan langsung dari mockEmployees — tidak ada hardcoded angka.
+ * Semua data berasal dari Employee aktual (remote GAS/Spreadsheet).
+ * Field mock (pegawaiAktif, pegawaiSedangCuti, totalCuti) telah dihapus
+ * karena tidak didukung data spreadsheet:
+ * - statusAktif tidak dikirim GAS (remoteDataSource default true)
+ * - cuti aktif tidak ada di spreadsheet DUK
+ * - mockLeaveTypeSummary adalah data contoh, bukan real
  */
 
 export interface DashboardSummary {
   totalPegawai: number
-  pegawaiAktif: number
-  pegawaiSedangCuti: number
-  totalCuti: number
-  /** Dihitung dari Employee.statusKepegawaian yang sudah ada — bukan data baru. */
+  /** Dihitung dari Employee.statusKepegawaian === 'PNS'. */
   totalPNS: number
+  /** Dihitung dari Employee.statusKepegawaian === 'PPPK'. */
   totalPPPK: number
 }
 
@@ -49,7 +44,10 @@ export interface LeaveTypeSummaryItem {
   jumlah: number
 }
 
-/** Untuk Donut Chart PNS vs PPPK */
+/**
+ * Status Kepegawaian: PNS, PPPK, atau Tanpa Status (data kosong di spreadsheet).
+ * "Tanpa Status" bukan berarti nonaktif — hanya belum terisi di DUK.
+ */
 export interface StatusKepegawaianStat {
   status: string
   jumlah: number
@@ -74,11 +72,32 @@ export interface BidangStat {
   jumlah: number
 }
 
-/** Untuk Bar/Donut Chart Pendidikan */
+/** Untuk Horizontal Bar Chart Pendidikan */
 export interface PendidikanStat {
   tingkat: string
   jumlah: number
   persentase: number
+}
+
+/**
+ * Distribusi gender dari field jenisKelamin.
+ * "(Belum Terisi)" = data kosong di spreadsheet, bukan kategori gender.
+ * Coverage aktual: 175/227 (77.1%) — lihat analisis data aktual.
+ */
+export interface GenderStat {
+  label: string   // "Laki-laki" | "Perempuan" | "(Belum Terisi)"
+  jumlah: number
+  persentase: number
+}
+
+/**
+ * Distribusi kelompok usia, dihitung dari field tanggalLahir.
+ * Pegawai tanpa tanggalLahir valid dikecualikan dan dilaporkan terpisah.
+ * Coverage aktual: 190/227 (83.7%) — lihat analisis data aktual.
+ */
+export interface UsiaStat {
+  kelompok: string  // "< 30 Tahun" | "30–39 Tahun" | "40–49 Tahun" | "50–59 Tahun" | "60+ Tahun"
+  jumlah: number
 }
 
 export interface EmployeeChartData {
@@ -87,5 +106,13 @@ export interface EmployeeChartData {
   satker: SatkerStat[]
   bidang: BidangStat[]
   pendidikan: PendidikanStat[]
+  /** Distribusi gender dari jenisKelamin — termasuk "(Belum Terisi)" untuk data kosong. */
+  gender: GenderStat[]
+  /** Distribusi usia dari tanggalLahir — hanya pegawai dengan tanggalLahir valid. */
+  usia: UsiaStat[]
+  /** Jumlah pegawai dengan tanggalLahir valid, untuk disclaimer chart usia. */
+  usiaDataValid: number
+  /** Total seluruh pegawai, untuk disclaimer coverage. */
+  totalPegawai: number
 }
 

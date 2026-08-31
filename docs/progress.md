@@ -1,6 +1,92 @@
 # Project Progress
 
 ## Completed
+- Dashboard — Legend Status Kepegawaian & Alignment Card (redesign lanjutan):
+  - **Diaudit dulu:** `StatusKepegawaianChart.tsx`, `Dashboard.tsx` (grid
+    Zone 4 Demografi & Zone 5 Status/Organisasi), `HorizontalBarChart.tsx`,
+    `UsiaChart.tsx`, `GenderChart.tsx`, `ui/card.tsx`. Akar masalah
+    ketidaksejajaran: `Card` tidak pernah diberi `h-full`, sehingga
+    meskipun grid cell-nya sejajar (stretch), kotak `Card` yang terlihat
+    (border/shadow) hanya setinggi kontennya sendiri — dan
+    `HorizontalBarChart` menghitung tinggi chart dari `data.length`
+    masing-masing, jadi Satker & Bidang/Bagian otomatis beda tinggi kalau
+    jumlah kategorinya beda.
+  - **File diubah:**
+    - `src/components/dashboard/StatusKepegawaianChart.tsx` — (1) legend
+      sekarang menampilkan jumlah **dan** persentase: `PNS 100 (44%)`,
+      `(Belum Terisi) 108 (48%)` — sebelumnya hanya persentase. (2) `Card`
+      diberi `h-full flex flex-col` + `CardContent` `flex-1 flex-col
+      justify-center` supaya sejajar dengan Satker/Bidang dalam satu row.
+      Donut chart, warna, dan sumber data **tidak diubah**.
+    - `src/components/dashboard/HorizontalBarChart.tsx` — `Card`/
+      `CardContent` diberi `h-full`/`flex-1` yang sama, supaya card benar-
+      benar mengisi tinggi grid row (dipakai Satker & Bidang/Bagian).
+    - `src/components/dashboard/UsiaChart.tsx` &
+      `src/components/dashboard/GenderChart.tsx` — `Card`/`CardContent`
+      diberi `h-full`/`flex-1 justify-center` yang sama, supaya daftar
+      Gender (3 kategori) tidak menyisakan whitespace kosong di bagian
+      bawah saat disejajarkan dengan Usia (5 kategori) — kontennya
+      sekarang center secara vertikal mengisi tinggi yang sama, bukan
+      menggantung di atas dengan gap kosong di bawah.
+    - `src/pages/Dashboard.tsx` — (1) tambah `orgChartHeight`: satu nilai
+      tinggi chart yang dihitung dari kategori TERBANYAK di antara Satker
+      & Bidang/Bagian, dipakai bersama oleh keduanya lewat prop `height`
+      — supaya salah satu tidak menjadi lebih tinggi hanya karena
+      kategorinya lebih banyak (sesuai instruksi eksplisit). Kategori yang
+      lebih sedikit tetap dapat ruang yang sama, bar-nya jadi sedikit
+      lebih renggang, bukan card-nya menciut. (2) tambah `items-stretch`
+      eksplisit + `h-full` pada div pembungkus grid Zone 4 & Zone 5 (tidak
+      mengubah struktur grid/kolom yang sudah ada).
+  - **Tidak diubah:** `services/api.ts`, `types/dashboard.ts`, hooks,
+    `GolonganChart.tsx`, `PendidikanChart.tsx`, data/logic pengambilan
+    angka, routing, authentication. Tidak ada mock data baru.
+  - **Hasil verifikasi:** `npm run lint` ✅ bersih. `npx tsc -b` ✅ bersih.
+    `npm run build` — bagian `tsc -b` lulus; bagian `vite build`
+    (bundling) tetap gagal di sandbox chat ini karena `node_modules` yang
+    di-upload berisi binary native Rollup Windows
+    (`rollup-win32-x64-gnu/msvc`), bukan Linux — masalah lingkungan yang
+    sudah dilaporkan sebelumnya, bukan error dari perubahan ini. **Wajib
+    jalankan `npm run build` penuh di mesin Anda** untuk konfirmasi akhir.
+
+- Dashboard — Penyempurnaan Chart & Hover (redesign lanjutan):
+  - **Diaudit dulu:** struktur `src/`, `services/api.ts`
+    (`getEmployeeChartData`), `types/dashboard.ts`, `pages/Dashboard.tsx`,
+    dan seluruh komponen chart dashboard. Hasil audit: mayoritas
+    requirement (KPI tanpa "Pegawai Aktif"/cuti mock, Golongan vertical
+    column semua kategori, Satker/Bidang horizontal data aktual, warna
+    per palet Kemenhub, hierarki Header→KPI→Golongan→Demografi→Status&
+    Organisasi→Pendidikan) **sudah terpenuhi** dari pekerjaan sebelumnya.
+  - **File diubah:**
+    - `src/components/dashboard/PendidikanChart.tsx` — diganti dari
+      horizontal bar (lewat `HorizontalBarChart`) menjadi **vertical
+      column chart mandiri** (pola sama dengan `GolonganChart`, tidak
+      saling bergantung), menampilkan seluruh kategori pendidikan
+      termasuk `(Belum Terisi)`, warna indigo.
+    - `src/components/dashboard/UsiaChart.tsx` &
+      `src/components/dashboard/GenderChart.tsx` — tambah row-hover
+      background highlight (`hover:bg-accent/50`, transisi halus,
+      pakai `-mx-2`/`px-2` supaya tidak menggeser layout) untuk
+      melengkapi tooltip hover yang sudah ada.
+  - **Tidak diubah** (sudah sesuai / di luar kebutuhan UI):
+    `services/api.ts`, `types/dashboard.ts`, hooks, `GolonganChart.tsx`,
+    `HorizontalBarChart.tsx`, `StatusKepegawaianChart.tsx`,
+    `StatCard.tsx`, `Dashboard.tsx` (hierarki layout tidak berubah),
+    routing, authentication.
+  - **Perbaikan tooling (bukan kode aplikasi):** `tsconfig.app.json`
+    ditambah `"ignoreDeprecations": "5.0"` — `tsc -b` di lingkungan
+    build ini gagal karena TypeScript 5.9.3 (terpasang di
+    `node_modules`) memperlakukan opsi `baseUrl` lama sebagai error
+    (TS5101), bukan sekadar warning. Perbaikan ini murni konfigurasi
+    compiler, tidak menyentuh business logic.
+  - **Hasil verifikasi:** `npx tsc -b` ✅ bersih, `npm run lint` ✅
+    bersih (0 error/warning). `vite build` (tahap bundling) **gagal di
+    sandbox chat ini** karena `node_modules` yang di-upload berisi
+    binary native Rollup untuk Windows (`rollup-win32-x64-*`), sedangkan
+    sandbox ini Linux — `@rollup/rollup-linux-x64-gnu` tidak tersedia
+    dan sandbox tanpa akses network untuk `npm install` ulang. Ini
+    murni masalah lingkungan, bukan error kode. **Wajib jalankan
+    `npm run build` penuh di mesin Anda sendiri** untuk konfirmasi akhir.
+
 - Checkpoint 5 (Persiapan) — Data Abstraction Layer untuk Integrasi
   Spreadsheet Online:
   - **Tujuan:** menyiapkan project agar sumber data bisa dipindah dari

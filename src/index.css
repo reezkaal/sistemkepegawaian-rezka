@@ -39,6 +39,14 @@
     --violet-foreground: 0 0% 100%;
     --orange: 25 95% 53%;              /* #F97316 */
     --orange-foreground: 0 0% 100%;
+    --amber: 38 95% 48%;               /* #F59E0B — chart Golongan */
+    --amber-foreground: 221 38% 14%;
+    --teal: 173 80% 36%;               /* #0D9488 — chart Satker/Bidang */
+    --teal-foreground: 0 0% 100%;
+    --indigo: 239 84% 58%;             /* #4F46E5 — chart Pendidikan */
+    --indigo-foreground: 0 0% 100%;
+    --pink: 330 81% 60%;               /* #EC4899 — chart Gender (Perempuan) */
+    --pink-foreground: 0 0% 100%;
 
     --secondary: 220 40% 95%;
     --secondary-foreground: 221 38% 14%;
@@ -86,6 +94,14 @@
     --violet-foreground: 222 47% 11%;
     --orange: 25 88% 60%;
     --orange-foreground: 222 47% 11%;
+    --amber: 38 90% 55%;
+    --amber-foreground: 222 47% 11%;
+    --teal: 173 72% 44%;
+    --teal-foreground: 222 47% 11%;
+    --indigo: 239 76% 68%;
+    --indigo-foreground: 222 47% 11%;
+    --pink: 330 78% 68%;
+    --pink-foreground: 222 47% 11%;
 
     --secondary: 216 33% 21%;          /* #243247 */
     --secondary-foreground: 210 40% 98%;

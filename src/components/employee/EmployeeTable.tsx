@@ -1,13 +1,25 @@
 import { useNavigate } from 'react-router-dom'
-import { Users } from 'lucide-react'
+import { Users, ArrowUp, ArrowDown, ArrowUpDown } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import type { EmployeeListItem } from '@/types/employee'
+import type { NamaSortDirection } from '@/hooks/useEmployeeList'
 
 interface EmployeeTableProps {
   items: EmployeeListItem[]
   isLoading: boolean
   error: string | null
+  /** Arah sorting kolom Nama saat ini (`null` = urutan default/asli). */
+  namaSortDirection: NamaSortDirection
+  /** Toggle sorting Nama: klik 1=A-Z, klik 2=Z-A, klik 3=kembali ke default. */
+  onToggleNamaSort: () => void
+}
+
+/** Indikator arah sorting kolom Nama: default=↕, A-Z=↑, Z-A=↓. */
+function NamaSortIcon({ direction }: { direction: NamaSortDirection }) {
+  if (direction === 'asc') return <ArrowUp className="h-3.5 w-3.5" aria-hidden="true" />
+  if (direction === 'desc') return <ArrowDown className="h-3.5 w-3.5" aria-hidden="true" />
+  return <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground/60" aria-hidden="true" />
 }
 
 const COLUMN_COUNT = 7
@@ -29,7 +41,13 @@ function EmployeeRowSkeleton() {
   )
 }
 
-export default function EmployeeTable({ items, isLoading, error }: EmployeeTableProps) {
+export default function EmployeeTable({
+  items,
+  isLoading,
+  error,
+  namaSortDirection,
+  onToggleNamaSort,
+}: EmployeeTableProps) {
   const navigate = useNavigate()
 
   return (
@@ -38,7 +56,17 @@ export default function EmployeeTable({ items, isLoading, error }: EmployeeTable
         <thead>
           <tr className="border-b border-border bg-muted/60 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
             <th scope="col" className="px-4 py-3">
-              Nama
+              <button
+                type="button"
+                onClick={onToggleNamaSort}
+                className={`flex items-center gap-1 uppercase tracking-wider transition-colors hover:text-foreground ${
+                  namaSortDirection ? 'text-foreground' : 'text-muted-foreground'
+                }`}
+                aria-label={`Urutkan berdasarkan Nama ${namaSortDirection === 'asc' ? '(A-Z, klik untuk Z-A)' : namaSortDirection === 'desc' ? '(Z-A, klik untuk urutan default)' : '(urutan default, klik untuk A-Z)'}`}
+              >
+                Nama
+                <NamaSortIcon direction={namaSortDirection} />
+              </button>
             </th>
             <th scope="col" className="px-4 py-3">
               NIP
@@ -87,7 +115,12 @@ export default function EmployeeTable({ items, isLoading, error }: EmployeeTable
             !error &&
             items.map((employee) => (
               <tr
-                key={employee.nip}
+                // NIP kosong pada ~99% data DUK asli (lihat audit sorting bug) —
+                // key HARUS unik per baris walau NIP kosong, jadi digabung
+                // dengan Nama (unik di seluruh data DUK) supaya React tidak
+                // salah mencocokkan/duplikasi baris saat urutan berubah
+                // (sorting Nama A-Z/Z-A/default).
+                key={`${employee.nip || 'no-nip'}-${employee.nama}`}
                 className="transition-colors odd:bg-card even:bg-muted/40 hover:bg-primary-soft/50"
               >
                 <td className="px-4 py-3 font-medium text-foreground">{employee.nama}</td>

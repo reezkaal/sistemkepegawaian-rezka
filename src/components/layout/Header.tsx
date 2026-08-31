@@ -1,4 +1,4 @@
-import { Menu, Building2 } from 'lucide-react'
+import { Menu } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
 import ThemeToggle from '@/components/layout/ThemeToggle'
 
@@ -32,9 +32,11 @@ export default function Header({ onToggleMobileNav }: HeaderProps) {
         </button>
 
         <div className="flex items-center gap-2.5">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary shadow-soft">
-            <Building2 className="h-[18px] w-[18px] text-primary-foreground" aria-hidden="true" />
-          </div>
+          <img
+            src="/logo-kemenhub.png"
+            alt="Logo Kementerian Perhubungan Republik Indonesia"
+            className="h-9 w-9 shrink-0 object-contain"
+          />
           <div className="leading-tight">
             <p className="text-sm font-bold tracking-tight text-foreground">SIMPEG PPSDMPU</p>
             <p className="hidden text-xs text-muted-foreground sm:block">

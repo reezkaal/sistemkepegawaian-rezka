@@ -55,6 +55,8 @@ export default function Employees() {
     totalPages,
     setPage,
     summary,
+    namaSortDirection,
+    onToggleNamaSort,
   } = useEmployeeList(namaQuery, nipQuery, satkerFilter, bidangFilter, statusFilter)
 
   return (
@@ -94,7 +96,13 @@ export default function Employees() {
       </Card>
 
       <Card className="overflow-hidden p-0">
-        <EmployeeTable items={pageItems} isLoading={isLoading} error={error} />
+        <EmployeeTable
+          items={pageItems}
+          isLoading={isLoading}
+          error={error}
+          namaSortDirection={namaSortDirection}
+          onToggleNamaSort={onToggleNamaSort}
+        />
         <EmployeePagination
           page={page}
           totalPages={totalPages}

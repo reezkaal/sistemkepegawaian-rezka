@@ -1,4 +1,4 @@
-/**
+﻿/**
  * HRIS PPSDMPU — Google Apps Script Web App
  *
  * Endpoint:
@@ -16,6 +16,14 @@
  * Script ini HANYA mengembalikan field yang dibutuhkan oleh type Employee,
  * LeaveRecord, dan LeaveYearValue di aplikasi frontend. Seluruh kolom
  * spreadsheet lain tidak dikirim ke client.
+ *
+ * CACHE:
+ * Hasil getAllData_() di-cache via CacheService.getScriptCache() selama
+ * CACHE_TTL_SECONDS. Cache miss/expired: baca Spreadsheet, simpan cache,
+ * return. Cache hit: parse JSON, return langsung (tanpa baca Spreadsheet).
+ * Jika data terlalu besar untuk cache (> 100 KB), fallback ke Spreadsheet.
+ * Endpoint ?resource=employees dan ?resource=leave tetap tanpa cache
+ * (backward-compat, jarang dipakai oleh frontend saat ini).
  *
  * CATATAN KOLOM (0-indexed, berdasarkan baris ke-6 sheet DUK):
  *   0=NO | 1=PEGAWAI | 2=NIP | 3=TMT Gol | 4=GOL | 5=Pendidikan(angkat)
@@ -52,7 +60,7 @@ var LEAVE_COL_START = 45;
 
 /**
  * Kolom terakhir (1-indexed) yang dibutuhkan employees: kolom 39 (NPWP, 0-based=38).
- * Tidak perlu baca kolom 40–75+ untuk endpoint employees.
+ * Tidak perlu baca kolom 40-75+ untuk endpoint employees.
  */
 var EMPLOYEES_LAST_COL = 39;
 
@@ -62,6 +70,20 @@ var EMPLOYEES_LAST_COL = 39;
  */
 var LEAVE_LAST_COL = 75;
 
+/**
+ * Cache key untuk CacheService. Satu key menyimpan seluruh gabungan
+ * employees + leave (?resource=all) sebagai JSON string.
+ */
+var CACHE_KEY = 'hris_all_data';
+
+/**
+ * TTL cache dalam detik.
+ * 180 detik (3 menit): cukup fresh untuk sistem internal yang datanya
+ * jarang berubah, cukup lama untuk mengurangi Spreadsheet reads.
+ * Maksimum CacheService GAS: 21600 detik (6 jam).
+ */
+var CACHE_TTL_SECONDS = 180;
+
 // === Entry Point ===
 
 function doGet(e) {
@@ -70,7 +92,7 @@ function doGet(e) {
   try {
     var data;
     if (resource === 'all') {
-      data = getAllData_();
+      data = getAllDataCached_();
     } else if (resource === 'employees') {
       data = getEmployees_();
     } else if (resource === 'leave') {
@@ -80,16 +102,55 @@ function doGet(e) {
     }
     return jsonResponse_(data);
   } catch (err) {
-    return errorResponse_('Gagal memproses permintaan: ' + err.message);
+    return errorResponse_('Gagal memproses permintaan.');
   }
+}
+
+// === Cache Layer ===
+
+/**
+ * Ambil data gabungan employees + leave, dengan cache.
+ *
+ * Alur:
+ * 1. Cek CacheService.getScriptCache() — jika ada, parse JSON dan return.
+ * 2. Jika tidak ada / expired — baca Spreadsheet via getAllData_().
+ * 3. Serialize ke JSON — coba simpan ke cache.
+ *    Jika data > 100 KB, put() gagal — tangkap error, lanjut tanpa cache.
+ *    Data tetap dikembalikan ke caller.
+ * 4. Return data.
+ */
+function getAllDataCached_() {
+  var cache = CacheService.getScriptCache();
+
+  // Cache hit
+  var cached = cache.get(CACHE_KEY);
+  if (cached) {
+    try {
+      return JSON.parse(cached);
+    } catch (_parseErr) {
+      // Cache rusak/corrupt — lanjut baca Spreadsheet
+    }
+  }
+
+  // Cache miss atau expired — baca Spreadsheet
+  var data = getAllData_();
+
+  // Coba simpan ke cache — graceful fallback jika gagal (mis. data > 100 KB)
+  try {
+    cache.put(CACHE_KEY, JSON.stringify(data), CACHE_TTL_SECONDS);
+  } catch (_cacheErr) {
+    // Tidak mempengaruhi response — data tetap dikembalikan.
+  }
+
+  return data;
 }
 
 // === All Resource (baca spreadsheet 1x, return keduanya) ===
 
 /**
  * Baca spreadsheet SEKALI hingga kolom LEAVE_LAST_COL, proses employees dan
- * leave dari data yang sama. Ini yang dipakai oleh remoteDataSource.ts untuk
- * menghindari 2 round-trip HTTP ke GAS.
+ * leave dari data yang sama. Menghindari 2 round-trip pembacaan sheet.
+ * Dipanggil hanya oleh getAllDataCached_().
  */
 function getAllData_() {
   var rows = getDataRowsUpTo_(LEAVE_LAST_COL);
@@ -210,13 +271,13 @@ function buildLeaveRecords_(rows) {
       }
 
       result.push({
-        nip:      nip,
-        nama:     nama,
+        nip:       nip,
+        nama:      nama,
         unitKerja: unitKerja,
-        tahun:    tahun,
-        nMinus2:  nMinus2,
-        nMinus1:  nMinus1,
-        n:        n
+        tahun:     tahun,
+        nMinus2:   nMinus2,
+        nMinus1:   nMinus1,
+        n:         n
       });
     }
   }
@@ -238,7 +299,7 @@ function getDataRowsUpTo_(lastCol) {
   var sheet = ss.getSheetByName(SHEET_NAME);
 
   if (!sheet) {
-    throw new Error('Sheet "' + SHEET_NAME + '" tidak ditemukan di spreadsheet.');
+    throw new Error('Sheet tidak ditemukan.');
   }
 
   var lastRow = sheet.getLastRow();

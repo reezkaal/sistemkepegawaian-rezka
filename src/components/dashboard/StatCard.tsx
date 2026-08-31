@@ -6,7 +6,7 @@ interface StatCardProps {
   label: string
   value: number
   icon: LucideIcon
-  tone?: 'primary' | 'success' | 'warning' | 'cyan' | 'violet' | 'orange'
+  tone?: 'primary' | 'success' | 'warning' | 'cyan' | 'violet' | 'orange' | 'amber'
   /** Teks kecil opsional di bawah angka, mis. "dari 9 pegawai". */
   hint?: string
 }
@@ -23,6 +23,7 @@ const TONE_STYLES: Record<NonNullable<StatCardProps['tone']>, string> = {
   cyan: 'bg-cyan/10 text-cyan',
   violet: 'bg-violet/10 text-violet',
   orange: 'bg-orange/10 text-orange',
+  amber: 'bg-amber/10 text-amber',
 }
 
 export default function StatCard({ label, value, icon: Icon, tone = 'primary', hint }: StatCardProps) {

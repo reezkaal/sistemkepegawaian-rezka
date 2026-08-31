@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react'
 import { Navigate, useLocation, useNavigate } from 'react-router-dom'
-import { Building2, Eye, EyeOff, Loader2, TriangleAlert } from 'lucide-react'
+import { Eye, EyeOff, Loader2, TriangleAlert } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -67,9 +67,11 @@ export default function Login() {
       <div className="w-full max-w-sm">
         {/* Identitas instansi */}
         <div className="mb-6 flex flex-col items-center text-center">
-          <div className="flex h-14 w-14 items-center justify-center rounded-md bg-primary">
-            <Building2 className="h-7 w-7 text-primary-foreground" aria-hidden="true" />
-          </div>
+          <img
+            src="/logo-kemenhub.png"
+            alt="Logo Kementerian Perhubungan Republik Indonesia"
+            className="h-14 w-14 object-contain"
+          />
           <h1 className="mt-4 text-lg font-semibold text-foreground">
             SIMPEG PPSDMPU
           </h1>

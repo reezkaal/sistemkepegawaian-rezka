@@ -1,4 +1,4 @@
-﻿# Google Apps Script Web App — Panduan Deploy & Integrasi
+# Google Apps Script Web App — Panduan Deploy & Integrasi
 
 **File Apps Script:** `google-apps-script/Code.gs`
 
@@ -68,8 +68,8 @@ cp .env.example .env
 Edit file `.env`:
 
 ```env
-# Isi dengan URL yang didapat dari langkah deploy di atas
-VITE_API_URL=https://script.google.com/macros/s/AKfycb.../exec
+# URL GAS — dibaca server-side oleh Vercel Function, tidak masuk browser bundle
+GOOGLE_APPS_SCRIPT_URL=https://script.google.com/macros/s/AKfycb.../exec
 
 # Aktifkan data remote:
 VITE_DATA_SOURCE=remote
@@ -77,7 +77,7 @@ VITE_DATA_SOURCE=remote
 
 Setelah mengubah `.env`, restart dev server:
 ```bash
-npm run dev
+npm run dev   # Vite proxy meneruskan /api/* ke GAS
 ```
 
 ---
@@ -86,10 +86,12 @@ npm run dev
 
 ```env
 # .env
-VITE_API_URL=https://script.google.com/macros/s/AKfycb.../exec
+GOOGLE_APPS_SCRIPT_URL=https://script.google.com/macros/s/AKfycb.../exec
 VITE_DATA_SOURCE=remote
 ```
 
+- Frontend memanggil `/api/employees` dan `/api/leave` (Vercel proxy).
+- Vercel Function membaca `GOOGLE_APPS_SCRIPT_URL` dari server-side env.
 - Dashboard, halaman Pegawai, dan halaman Cuti akan membaca data asli dari spreadsheet.
 - Tidak ada perubahan kode frontend yang diperlukan.
 
@@ -100,7 +102,7 @@ VITE_DATA_SOURCE=remote
 ```env
 # .env
 VITE_DATA_SOURCE=mock
-# VITE_API_URL bisa dibiarkan atau dihapus — tidak dipakai di mode mock
+# GOOGLE_APPS_SCRIPT_URL bisa dibiarkan atau dihapus — tidak dipakai di mode mock
 ```
 
 Atau cukup hapus/tidak mengisi `VITE_DATA_SOURCE` — default ke `mock`.
@@ -232,7 +234,7 @@ Jika dibutuhkan keamanan lebih ketat, field-field ini bisa di-mask di sisi Apps 
 | Problem | Kemungkinan Penyebab | Solusi |
 |---|---|---|
 | `{"error":true,"message":"..."}` | Parameter resource salah / sheet tidak ditemukan | Cek URL endpoint, pastikan sheet bernama "DUK" |
-| Data tidak muncul di dashboard | `VITE_API_URL` belum diisi / salah | Cek `.env`, pastikan URL sudah di-paste dengan benar |
+| Data tidak muncul di dashboard | `GOOGLE_APPS_SCRIPT_URL` belum diisi di Vercel / salah | Cek Vercel Environment Variables, pastikan URL di-paste dengan benar |
 | Error 401/403 | Izin belum diberikan saat deploy | Deploy ulang → authorize akses |
 | Data lama (tidak update) | Cache Apps Script | Deploy ulang dengan version baru |
 | CORS error di browser | Tidak ada — Apps Script tidak mengirim CORS header untuk doGet JSON | Gunakan `fetch` biasa tanpa header CORS khusus |

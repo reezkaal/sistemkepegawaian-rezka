@@ -10,7 +10,6 @@
  * dengan `LeaveSummaryCard` yang sudah dipakai di Detail Pegawai.
  */
 
-import { Info } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import type { LeaveYearAggregate } from '@/types/dashboard'
 
@@ -47,7 +46,9 @@ export default function CutiSummaryCard({ data, isLoading, error }: CutiSummaryC
       <CardHeader className="pb-2">
         <CardTitle className="text-sm font-semibold">Ringkasan Cuti</CardTitle>
         <CardDescription className="text-xs">
-          {data ? `Data Nilai Cuti Tahunan ${data.tahun} (N-2/N-1/N)` : 'Data Nilai Cuti Tahunan'}
+          {data
+            ? `${data.jumlahPegawaiTercatat} dari ${data.tahun} pegawai punya data`
+            : 'Data Nilai Cuti Tahunan'}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -68,19 +69,10 @@ export default function CutiSummaryCard({ data, isLoading, error }: CutiSummaryC
               <StatBlock label={`N-1 (${data.tahun - 1})`} value={data.totalNMinus1} />
               <StatBlock label={`N (${data.tahun})`} value={data.totalN} />
             </div>
-            <p className="mt-3 text-xs text-muted-foreground">
-              Dijumlahkan dari {data.jumlahPegawaiTercatat} pegawai yang memiliki data untuk
-              tahun {data.tahun}.
+            <p className="mt-3 text-[11px] italic text-muted-foreground">
+              Nilai mentah N-2/N-1/N sebagaimana tercatat — bukan saldo atau sisa cuti
+              (arti bisnis belum dikonfirmasi, lihat docs/data-mapping.md).
             </p>
-            <div className="mt-3 flex gap-2 rounded-lg bg-muted p-3">
-              <Info className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
-              <p className="text-xs text-muted-foreground">
-                Angka di atas adalah nilai mentah N-2/N-1/N sebagaimana tercatat, dijumlahkan
-                lintas pegawai. Ini <strong>bukan</strong> saldo atau sisa cuti yang dapat
-                digunakan — arti bisnis N-2/N-1/N masih menunggu konfirmasi (lihat
-                docs/data-mapping.md).
-              </p>
-            </div>
           </>
         )}
       </CardContent>
