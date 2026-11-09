@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Arsitektur Sistem — HRIS PPSDMPU</title>
+  <meta name="description" content="Diagram arsitektur sistem Informasi Kepegawaian PPSDMPU: aliran data dari Google Spreadsheet melalui Google Apps Script, Vercel Serverless, hingga React SPA di browser.">
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: #f5f5f5;
+      font-family: 'Geist', sans-serif;
+      color: #2d3142;
+      padding: 48px 32px 64px;
+      min-height: 100vh;
+    }
+    .page {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+    .eyebrow {
+      font-family: 'Geist Mono', monospace;
+      font-size: 10px;
+      font-weight: 500;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: #7a8399;
+      margin-bottom: 10px;
+    }
+    h1 {
+      font-family: 'Instrument Serif', serif;
+      font-size: 1.75rem;
+      font-weight: 400;
+      color: #2d3142;
+      margin-bottom: 6px;
+    }
+    .subtitle {
+      font-family: 'Geist', sans-serif;
+      font-size: 13px;
+      color: #4f5d75;
+      margin-bottom: 40px;
+    }
+    .diagram-wrap {
+      width: 100%;
+      overflow-x: auto;
+    }
+    svg {
+      display: block;
+      max-width: 100%;
+    }
+    .footer {
+      margin-top: 40px;
+      padding-top: 16px;
+      border-top: 1px solid rgba(45,49,66,0.12);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .footer p {
+      font-family: 'Geist Mono', monospace;
+      font-size: 9px;
+      letter-spacing: 0.10em;
+      color: #7a8399;
+    }
+  </style>
+</head>
+<body>
+<div class="page">
+  <p class="eyebrow">PPSDMPU · HRIS · ARSITEKTUR SISTEM</p>
+  <h1>Sistem Informasi Kepegawaian</h1>
+  <p class="subtitle">Aliran data dari Google Spreadsheet ke browser melalui Apps Script dan Vercel Serverless</p>
+
+  <div class="diagram-wrap">
+    <!--
+      SVG viewBox: 880 × 820
+      Legend strip: +60px → total height 820
+      Grid: 4px
+      Nodes: 9
+      Arrows: 9
+      Focal: Service Layer (api.ts) — accent fill/stroke
+    -->
+    <svg
+      viewBox="0 0 880 820"
+      xmlns="http://www.w3.org/2000/svg"
+      role="img"
+      aria-labelledby="arch-title arch-desc"
+      style="width:100%; height:auto;"
+    >
+      <title id="arch-title">Arsitektur Sistem HRIS PPSDMPU</title>
+      <desc id="arch-desc">Diagram arsitektur top-down: Browser mengakses React SPA; Login menyimpan session ke sessionStorage; ProtectedRoute menjaga halaman; komponen memanggil Service Layer (api.ts) sebagai satu-satunya sumber data; mode mock membaca data lokal, mode remote memanggil Vercel Serverless Function yang memproxy ke Google Apps Script; Apps Script membaca sheet DUK dari Google Spreadsheet.</desc>
+
+      <defs>
+        <!-- Arrow markers -->
+        <marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+          <polygon points="0 0, 8 3, 0 6" fill="#4f5d75"/>
+        </marker>
+        <marker id="arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+          <polygon points="0 0, 8 3, 0 6" fill="#eb6c36"/>
+        </marker>
+        <marker id="arrow-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+          <polygon points="0 0, 8 3, 0 6" fill="#2e5aa8"/>
+        </marker>
+      </defs>
+
+      <!-- ═══════════════════════════════════════════ -->
+      <!-- BACKGROUND                                  -->
+      <!-- ═══════════════════════════════════════════ -->
+      <rect width="880" height="820" fill="#f5f5f5"/>
+
+      <!-- ═══════════════════════════════════════════ -->
+      <!-- ZONES (drawn first, below arrows+nodes)     -->
+      <!-- ═══════════════════════════════════════════ -->
+
+      <!-- Zone: BROWSER -->
+      <rect x="24" y="28" width="832" height="76" rx="8"
+            fill="rgba(45,49,66,0.02)" stroke="rgba(45,49,66,0.10)" stroke-width="0.8"/>
+      <rect x="36" y="32" width="68" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="70" y="41" fill="rgba(45,49,66,0.40)" font-size="7"
+            font-family="'Geist Mono', monospace" text-anchor="middle"
+            letter-spacing="0.14em">BROWSER</text>
+
+      <!-- Zone: REACT APP -->
+      <rect x="24" y="128" width="832" height="320" rx="8"
+            fill="rgba(45,49,66,0.02)" stroke="rgba(45,49,66,0.10)" stroke-width="0.8"/>
+      <rect x="36" y="132" width="84" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="78" y="141" fill="rgba(45,49,66,0.40)" font-size="7"
+            font-family="'Geist Mono', monospace" text-anchor="middle"
+            letter-spacing="0.14em">REACT APP</text>
+
+      <!-- Zone: VERCEL -->
+      <rect x="488" y="480" width="368" height="80" rx="8"
+            fill="rgba(45,49,66,0.02)" stroke="rgba(45,49,66,0.10)" stroke-width="0.8"/>
+      <rect x="500" y="484" width="52" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="526" y="493" fill="rgba(45,49,66,0.40)" font-size="7"
+            font-family="'Geist Mono', monospace" text-anchor="middle"
+            letter-spacing="0.14em">VERCEL</text>
+
+      <!-- Zone: GOOGLE CLOUD -->
+      <rect x="488" y="588" width="368" height="180" rx="8"
+            fill="rgba(45,49,66,0.02)" stroke="rgba(45,49,66,0.10)" stroke-width="0.8"/>
+      <rect x="500" y="592" width="96" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="548" y="601" fill="rgba(45,49,66,0.40)" font-size="7"
+            font-family="'Geist Mono', monospace" text-anchor="middle"
+            letter-spacing="0.14em">GOOGLE CLOUD</text>
+
+      <!-- ═══════════════════════════════════════════ -->
+      <!-- ARROWS (drawn before nodes)                 -->
+      <!-- ═══════════════════════════════════════════ -->
+
+      <!--
+        Node reference (x, y, w=160 unless noted, h=48):
+        N1 Browser:            x=360, y=40,  w=160 → cx=440, cy=64  | bot=88
+        N2 Login:              x=60,  y=148, w=160 → cx=140, cy=172 | top=148 bot=196 right=220
+        N3 ProtectedRoute:     x=280, y=148, w=256 → cx=408, cy=172 | top=148 bot=196 left=280
+        N4 App Pages:          x=280, y=260, w=256 → cx=408, cy=284 | top=260 bot=308
+        N5 api.ts [FOCAL]:     x=280, y=372, w=256 → cx=408, cy=396 | top=372 bot=420 right=536 left=280
+        N6 Mock Data [DASHED]: x=60,  y=480, w=160 → cx=140, cy=504 | top=480
+        N7 Vercel Functions:   x=508, y=500, w=348 → cx=682, cy=524 | top=500 left=508
+        N8 Google Apps Script: x=508, y=608, w=348 → cx=682, cy=632 | top=608 bot=656
+        N9 Spreadsheet:        x=508, y=716, w=348 → cx=682, cy=740 | top=716
+      -->
+
+      <!-- Arrow 1: Browser → Login (public route, left branch) -->
+      <!-- Source: Browser bottom at x=400, y=88 → Target: Login top cx=140, y=148 -->
+      <path d="M 400 88 L 400 116 L 140 116 L 140 148"
+            fill="none" stroke="#4f5d75" stroke-width="1.2"
+            marker-end="url(#arrow)"/>
+      <!-- label mask -->
+      <rect x="244" y="104" width="44" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="266" y="113" fill="#7a8399" font-size="8"
+            font-family="'Geist Mono', monospace" text-anchor="middle"
+            letter-spacing="0.06em">PUBLIC</text>
+
+      <!-- Arrow 2: Browser → ProtectedRoute (protected routes) -->
+      <!-- Source: Browser bottom at x=480, y=88 → Target: ProtectedRoute top cx=408, y=148 -->
+      <path d="M 480 88 L 480 128 L 408 128 L 408 148"
+            fill="none" stroke="#4f5d75" stroke-width="1.2"
+            marker-end="url(#arrow)"/>
+      <!-- label mask -->
+      <rect x="412" y="104" width="64" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="444" y="113" fill="#7a8399" font-size="8"
+            font-family="'Geist Mono', monospace" text-anchor="middle"
+            letter-spacing="0.06em">PROTECTED</text>
+
+      <!-- Arrow 3: Login → ProtectedRoute (session write, dashed) -->
+      <!-- Source: Login right=220, cy=172 → Target: ProtectedRoute left=280, cy=172 -->
+      <path d="M 220 172 L 280 172"
+            fill="none" stroke="#4f5d75" stroke-width="1"
+            stroke-dasharray="4,3"
+            marker-end="url(#arrow)"/>
+      <!-- label mask (above line) -->
+      <rect x="226" y="160" width="68" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="260" y="169" fill="#7a8399" font-size="8"
+            font-family="'Geist Mono', monospace" text-anchor="middle"
+            letter-spacing="0.06em">SESSION</text>
+
+      <!-- Arrow 4: ProtectedRoute → App Pages (renders when authenticated) -->
+      <!-- Source: ProtectedRoute bottom cx=408, y=196 → Target: AppPages top cx=408, y=260 -->
+      <path d="M 408 196 L 408 260"
+            fill="none" stroke="#4f5d75" stroke-width="1.2"
+            marker-end="url(#arrow)"/>
+      <!-- label right of vertical segment -->
+      <rect x="416" y="220" width="56" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="444" y="229" fill="#7a8399" font-size="8"
+            font-family="'Geist Mono', monospace" text-anchor="middle"
+            letter-spacing="0.06em">RENDERS</text>
+
+      <!-- Arrow 5: App Pages → api.ts (data request via hooks) -->
+      <!-- Source: AppPages bottom cx=408, y=308 → Target: api.ts top cx=408, y=372 -->
+      <path d="M 408 308 L 408 372"
+            fill="none" stroke="#eb6c36" stroke-width="1.2"
+            marker-end="url(#arrow-accent)"/>
+      <!-- label right of vertical segment -->
+      <rect x="416" y="332" width="80" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="456" y="341" fill="#eb6c36" font-size="8"
+            font-family="'Geist Mono', monospace" text-anchor="middle"
+            letter-spacing="0.06em">DATA REQUEST</text>
+
+      <!-- Arrow 6: api.ts → Mock Data (mock mode, dashed, left branch) -->
+      <!-- Source: api.ts bottom at x=340, y=420 → Target: MockData top cx=140, y=480 -->
+      <path d="M 340 420 L 340 452 L 140 452 L 140 480"
+            fill="none" stroke="#4f5d75" stroke-width="1"
+            stroke-dasharray="4,3"
+            marker-end="url(#arrow)"/>
+      <!-- label mask on horizontal segment -->
+      <rect x="194" y="440" width="92" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="240" y="449" fill="#7a8399" font-size="8"
+            font-family="'Geist Mono', monospace" text-anchor="middle"
+            letter-spacing="0.06em">MOCK MODE</text>
+
+      <!-- Arrow 7: api.ts → Vercel Functions (remote mode, link-blue) -->
+      <!-- Source: api.ts right=536, cy=396 → Target: Vercel top cx=682, y=500 -->
+      <!-- Two-bend: right from 536,396 → 568,396, then down 568,492, then right 682,492→682,500 -->
+      <path d="M 536 396 L 560 396 L 560 492 L 682 492 L 682 500"
+            fill="none" stroke="#2e5aa8" stroke-width="1.2"
+            marker-end="url(#arrow-link)"/>
+      <!-- label on horizontal segment at y=492 -->
+      <rect x="592" y="480" width="72" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="628" y="489" fill="#2e5aa8" font-size="8"
+            font-family="'Geist Mono', monospace" text-anchor="middle"
+            letter-spacing="0.06em">GET /api/*</text>
+
+      <!-- Arrow 8: Vercel Functions → Google Apps Script (proxy, link-blue) -->
+      <!-- Source: Vercel bottom cx=682, y=548 → Target: GAS top cx=682, y=608 -->
+      <path d="M 682 548 L 682 608"
+            fill="none" stroke="#2e5aa8" stroke-width="1.2"
+            marker-end="url(#arrow-link)"/>
+      <!-- label right -->
+      <rect x="690" y="570" width="96" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="738" y="579" fill="#2e5aa8" font-size="8"
+            font-family="'Geist Mono', monospace" text-anchor="middle"
+            letter-spacing="0.06em">?resource=all</text>
+
+      <!-- Arrow 9: Google Apps Script → Spreadsheet (reads DUK) -->
+      <!-- Source: GAS bottom cx=682, y=656 → Target: Spreadsheet top cx=682, y=716 -->
+      <path d="M 682 656 L 682 716"
+            fill="none" stroke="#4f5d75" stroke-width="1.2"
+            marker-end="url(#arrow)"/>
+      <!-- label right -->
+      <rect x="690" y="678" width="60" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="720" y="687" fill="#7a8399" font-size="8"
+            font-family="'Geist Mono', monospace" text-anchor="middle"
+            letter-spacing="0.06em">READ DUK</text>
+
+      <!-- ═══════════════════════════════════════════ -->
+      <!-- NODES                                       -->
+      <!-- ═══════════════════════════════════════════ -->
+
+      <!-- N1: Browser (input/user type) -->
+      <!-- x=360, y=40, w=160, h=48, cx=440, cy=64 -->
+      <rect x="360" y="40" width="160" height="48" rx="6" fill="#f5f5f5"/>
+      <rect x="360" y="40" width="160" height="48" rx="6"
+            fill="rgba(122,131,153,0.10)" stroke="#7a8399" stroke-width="1"/>
+      <!-- type tag -->
+      <rect x="368" y="47" width="28" height="11" rx="2"
+            fill="transparent" stroke="rgba(122,131,153,0.40)" stroke-width="0.8"/>
+      <text x="382" y="56" fill="rgba(122,131,153,0.80)" font-size="7"
+            font-family="'Geist Mono', monospace" text-anchor="middle"
+            letter-spacing="0.08em">USER</text>
+      <!-- node name -->
+      <text x="440" y="68" fill="#2d3142" font-size="12" font-weight="600"
+            font-family="'Geist', sans-serif" text-anchor="middle">Browser</text>
+
+      <!-- N2: Login (backend/step type) -->
+      <!-- x=60, y=148, w=160, h=48, cx=140, cy=172 -->
+      <rect x="60" y="148" width="160" height="48" rx="6" fill="#f5f5f5"/>
+      <rect x="60" y="148" width="160" height="48" rx="6"
+            fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+      <!-- type tag -->
+      <rect x="68" y="155" width="28" height="11" rx="2"
+            fill="transparent" stroke="rgba(45,49,66,0.40)" stroke-width="0.8"/>
+      <text x="82" y="164" fill="rgba(45,49,66,0.80)" font-size="7"
+            font-family="'Geist Mono', monospace" text-anchor="middle"
+            letter-spacing="0.08em">PAGE</text>
+      <!-- node name -->
+      <text x="140" y="176" fill="#2d3142" font-size="12" font-weight="600"
+            font-family="'Geist', sans-serif" text-anchor="middle">Login</text>
+      <!-- sublabel -->
+      <text x="140" y="190" fill="#4f5d75" font-size="9"
+            font-family="'Geist Mono', monospace" text-anchor="middle">/login</text>
+
+      <!-- N3: ProtectedRoute (security/boundary type) -->
+      <!-- x=280, y=148, w=256, h=48, cx=408, cy=172 -->
+      <rect x="280" y="148" width="256" height="48" rx="6" fill="#f5f5f5"/>
+      <rect x="280" y="148" width="256" height="48" rx="6"
+            fill="rgba(235,108,54,0.05)" stroke="rgba(235,108,54,0.50)"
+            stroke-width="1" stroke-dasharray="4,4"/>
+      <!-- type tag -->
+      <rect x="288" y="155" width="36" height="11" rx="2"
+            fill="transparent" stroke="rgba(235,108,54,0.40)" stroke-width="0.8"/>
+      <text x="306" y="164" fill="rgba(235,108,54,0.80)" font-size="7"
+            font-family="'Geist Mono', monospace" text-anchor="middle"
+            letter-spacing="0.08em">GUARD</text>
+      <!-- node name -->
+      <text x="408" y="176" fill="#2d3142" font-size="12" font-weight="600"
+            font-family="'Geist', sans-serif" text-anchor="middle">ProtectedRoute</text>
+      <!-- sublabel -->
+      <text x="408" y="190" fill="#4f5d75" font-size="9"
+            font-family="'Geist Mono', monospace" text-anchor="middle">sessionStorage</text>
+
+      <!-- N4: App Pages (backend/step type) -->
+      <!-- x=280, y=260, w=256, h=48, cx=408, cy=284 -->
+      <rect x="280" y="260" width="256" height="48" rx="6" fill="#f5f5f5"/>
+      <rect x="280" y="260" width="256" height="48" rx="6"
+            fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+      <!-- type tag -->
+      <rect x="288" y="267" width="52" height="11" rx="2"
+            fill="transparent" stroke="rgba(45,49,66,0.40)" stroke-width="0.8"/>
+      <text x="314" y="276" fill="rgba(45,49,66,0.80)" font-size="7"
+            font-family="'Geist Mono', monospace" text-anchor="middle"
+            letter-spacing="0.08em">UI LAYER</text>
+      <!-- node name -->
+      <text x="408" y="288" fill="#2d3142" font-size="12" font-weight="600"
+            font-family="'Geist', sans-serif" text-anchor="middle">App Pages + Hooks</text>
+      <!-- sublabel -->
+      <text x="408" y="302" fill="#4f5d75" font-size="9"
+            font-family="'Geist Mono', monospace" text-anchor="middle">Dashboard · Pegawai · Cuti · Detail</text>
+
+      <!-- N5: api.ts Service Layer — FOCAL (accent) -->
+      <!-- x=280, y=372, w=256, h=48, cx=408, cy=396 -->
+      <rect x="280" y="372" width="256" height="48" rx="6" fill="#f5f5f5"/>
+      <rect x="280" y="372" width="256" height="48" rx="6"
+            fill="rgba(235,108,54,0.08)" stroke="#eb6c36" stroke-width="1"/>
+      <!-- type tag -->
+      <rect x="288" y="379" width="52" height="11" rx="2"
+            fill="transparent" stroke="rgba(235,108,54,0.40)" stroke-width="0.8"/>
+      <text x="314" y="388" fill="rgba(235,108,54,0.80)" font-size="7"
+            font-family="'Geist Mono', monospace" text-anchor="middle"
+            letter-spacing="0.08em">SERVICE</text>
+      <!-- node name -->
+      <text x="408" y="400" fill="#2d3142" font-size="12" font-weight="600"
+            font-family="'Geist', sans-serif" text-anchor="middle">Service Layer</text>
+      <!-- sublabel -->
+      <text x="408" y="414" fill="#4f5d75" font-size="9"
+            font-family="'Geist Mono', monospace" text-anchor="middle">src/services/api.ts</text>
+
+      <!-- N6: Mock Data (optional/dashed type) -->
+      <!-- x=60, y=480, w=160, h=48, cx=140, cy=504 -->
+      <rect x="60" y="480" width="160" height="48" rx="6" fill="#f5f5f5"/>
+      <rect x="60" y="480" width="160" height="48" rx="6"
+            fill="rgba(45,49,66,0.02)" stroke="rgba(45,49,66,0.20)"
+            stroke-width="1" stroke-dasharray="4,3"/>
+      <!-- type tag -->
+      <rect x="68" y="487" width="32" height="11" rx="2"
+            fill="transparent" stroke="rgba(45,49,66,0.20)" stroke-width="0.8"/>
+      <text x="84" y="496" fill="rgba(45,49,66,0.50)" font-size="7"
+            font-family="'Geist Mono', monospace" text-anchor="middle"
+            letter-spacing="0.08em">MOCK</text>
+      <!-- node name -->
+      <text x="140" y="508" fill="#4f5d75" font-size="12" font-weight="600"
+            font-family="'Geist', sans-serif" text-anchor="middle">Mock Data</text>
+      <!-- sublabel -->
+      <text x="140" y="522" fill="#7a8399" font-size="9"
+            font-family="'Geist Mono', monospace" text-anchor="middle">src/mock/</text>
+
+      <!-- N7: Vercel Functions (backend/step type) -->
+      <!-- x=508, y=500, w=348, h=48, cx=682, cy=524 -->
+      <rect x="508" y="500" width="348" height="48" rx="6" fill="#f5f5f5"/>
+      <rect x="508" y="500" width="348" height="48" rx="6"
+            fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+      <!-- type tag -->
+      <rect x="516" y="507" width="72" height="11" rx="2"
+            fill="transparent" stroke="rgba(45,49,66,0.40)" stroke-width="0.8"/>
+      <text x="552" y="516" fill="rgba(45,49,66,0.80)" font-size="7"
+            font-family="'Geist Mono', monospace" text-anchor="middle"
+            letter-spacing="0.08em">SERVERLESS</text>
+      <!-- node name -->
+      <text x="682" y="528" fill="#2d3142" font-size="12" font-weight="600"
+            font-family="'Geist', sans-serif" text-anchor="middle">Vercel Functions</text>
+      <!-- sublabel -->
+      <text x="682" y="542" fill="#4f5d75" font-size="9"
+            font-family="'Geist Mono', monospace" text-anchor="middle">api/employees.ts · api/leave.ts</text>
+
+      <!-- N8: Google Apps Script (external/cloud type) -->
+      <!-- x=508, y=608, w=348, h=48, cx=682, cy=632 -->
+      <rect x="508" y="608" width="348" height="48" rx="6" fill="#f5f5f5"/>
+      <rect x="508" y="608" width="348" height="48" rx="6"
+            fill="rgba(45,49,66,0.03)" stroke="rgba(45,49,66,0.30)" stroke-width="1"/>
+      <!-- type tag -->
+      <rect x="516" y="615" width="60" height="11" rx="2"
+            fill="transparent" stroke="rgba(45,49,66,0.30)" stroke-width="0.8"/>
+      <text x="546" y="624" fill="rgba(45,49,66,0.50)" font-size="7"
+            font-family="'Geist Mono', monospace" text-anchor="middle"
+            letter-spacing="0.08em">EXTERNAL</text>
+      <!-- node name -->
+      <text x="682" y="636" fill="#2d3142" font-size="12" font-weight="600"
+            font-family="'Geist', sans-serif" text-anchor="middle">Google Apps Script</text>
+      <!-- sublabel -->
+      <text x="682" y="650" fill="#4f5d75" font-size="9"
+            font-family="'Geist Mono', monospace" text-anchor="middle">Web App · Cache 3 min · doGet()</text>
+
+      <!-- N9: Google Spreadsheet (store/state type) -->
+      <!-- x=508, y=716, w=348, h=48, cx=682, cy=740 -->
+      <rect x="508" y="716" width="348" height="48" rx="6" fill="#f5f5f5"/>
+      <rect x="508" y="716" width="348" height="48" rx="6"
+            fill="rgba(45,49,66,0.05)" stroke="#4f5d75" stroke-width="1"/>
+      <!-- type tag -->
+      <rect x="516" y="723" width="80" height="11" rx="2"
+            fill="transparent" stroke="rgba(79,93,117,0.40)" stroke-width="0.8"/>
+      <text x="556" y="732" fill="rgba(79,93,117,0.80)" font-size="7"
+            font-family="'Geist Mono', monospace" text-anchor="middle"
+            letter-spacing="0.08em">DATA SOURCE</text>
+      <!-- node name -->
+      <text x="682" y="744" fill="#2d3142" font-size="12" font-weight="600"
+            font-family="'Geist', sans-serif" text-anchor="middle">Google Spreadsheet</text>
+      <!-- sublabel -->
+      <text x="682" y="758" fill="#4f5d75" font-size="9"
+            font-family="'Geist Mono', monospace" text-anchor="middle">Sheet: DUK · Data baris 8+</text>
+
+      <!-- ═══════════════════════════════════════════ -->
+      <!-- LEGEND                                      -->
+      <!-- ═══════════════════════════════════════════ -->
+      <line x1="40" y1="784" x2="840" y2="784"
+            stroke="rgba(45,49,66,0.10)" stroke-width="0.8"/>
+      <text x="40" y="797" fill="#4f5d75" font-size="7.5"
+            font-family="'Geist Mono', monospace" letter-spacing="0.14em">LEGEND</text>
+
+      <!-- legend: focal -->
+      <rect x="100" y="788" width="28" height="12" rx="3"
+            fill="rgba(235,108,54,0.08)" stroke="#eb6c36" stroke-width="1"/>
+      <text x="136" y="798" fill="#4f5d75" font-size="8"
+            font-family="'Geist Mono', monospace">FOCAL NODE</text>
+
+      <!-- legend: security/guard -->
+      <rect x="240" y="788" width="28" height="12" rx="3"
+            fill="rgba(235,108,54,0.05)" stroke="rgba(235,108,54,0.50)"
+            stroke-width="1" stroke-dasharray="4,4"/>
+      <text x="276" y="798" fill="#4f5d75" font-size="8"
+            font-family="'Geist Mono', monospace">AUTH BOUNDARY</text>
+
+      <!-- legend: optional/mock dashed node -->
+      <rect x="400" y="788" width="28" height="12" rx="3"
+            fill="rgba(45,49,66,0.02)" stroke="rgba(45,49,66,0.20)"
+            stroke-width="1" stroke-dasharray="4,3"/>
+      <text x="436" y="798" fill="#4f5d75" font-size="8"
+            font-family="'Geist Mono', monospace">OPTIONAL (MOCK)</text>
+
+      <!-- legend: external HTTP arrow -->
+      <line x1="560" y1="794" x2="590" y2="794"
+            stroke="#2e5aa8" stroke-width="1.2" marker-end="url(#arrow-link)"/>
+      <text x="600" y="798" fill="#4f5d75" font-size="8"
+            font-family="'Geist Mono', monospace">EXTERNAL HTTP</text>
+
+      <!-- legend: internal arrow -->
+      <line x1="720" y1="794" x2="748" y2="794"
+            stroke="#4f5d75" stroke-width="1.2" marker-end="url(#arrow)"/>
+      <text x="756" y="798" fill="#4f5d75" font-size="8"
+            font-family="'Geist Mono', monospace">INTERNAL</text>
+
+    </svg>
+  </div>
+
+  <div class="footer">
+    <p>HRIS PPSDMPU · Arsitektur Sistem · diagram-design v2.6</p>
+    <p>React 18 · Vite · Vercel · Google Apps Script</p>
+  </div>
+</div>
+</body>
+</html>

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
-import { LayoutDashboard, Users, CalendarDays, LogOut } from 'lucide-react'
+import { LayoutDashboard, Users, CalendarDays, FileText, LogOut } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/hooks/useAuth'
 import LogoutDialog from '@/components/layout/LogoutDialog'
@@ -9,6 +9,7 @@ const NAV_ITEMS = [
   { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { to: '/pegawai', label: 'Pegawai', icon: Users },
   { to: '/cuti', label: 'Cuti', icon: CalendarDays },
+  { to: '/persuratan', label: 'Persuratan', icon: FileText },
 ]
 
 interface SidebarProps {

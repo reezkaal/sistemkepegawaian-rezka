@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Authentication Sequence — HRIS PPSDMPU</title>
+  <meta name="description" content="Sequence diagram mekanisme authentication aktual PPSDMPU-HRIS: mock credential validation, sessionStorage session, dan ProtectedRoute guard.">
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: #f5f5f5;
+      font-family: 'Geist', sans-serif;
+      color: #2d3142;
+      padding: 48px 32px 64px;
+      min-height: 100vh;
+    }
+    .page { max-width: 960px; margin: 0 auto; }
+    .eyebrow {
+      font-family: 'Geist Mono', monospace;
+      font-size: 10px;
+      font-weight: 500;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: #7a8399;
+      margin-bottom: 10px;
+    }
+    h1 {
+      font-family: 'Instrument Serif', serif;
+      font-size: 1.75rem;
+      font-weight: 400;
+      color: #2d3142;
+      margin-bottom: 6px;
+    }
+    .subtitle {
+      font-family: 'Geist', sans-serif;
+      font-size: 13px;
+      color: #4f5d75;
+      margin-bottom: 8px;
+    }
+    .mock-note {
+      display: inline-block;
+      font-family: 'Geist Mono', monospace;
+      font-size: 9px;
+      letter-spacing: 0.10em;
+      text-transform: uppercase;
+      color: #eb6c36;
+      border: 1px solid rgba(235,108,54,0.35);
+      border-radius: 3px;
+      padding: 2px 8px;
+      margin-bottom: 36px;
+    }
+    .diagram-wrap { width: 100%; overflow-x: auto; }
+    svg { display: block; max-width: 100%; }
+    .footer {
+      margin-top: 40px;
+      padding-top: 16px;
+      border-top: 1px solid rgba(45,49,66,0.12);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .footer p {
+      font-family: 'Geist Mono', monospace;
+      font-size: 9px;
+      letter-spacing: 0.10em;
+      color: #7a8399;
+    }
+  </style>
+</head>
+<body>
+<div class="page">
+  <p class="eyebrow">PPSDMPU · HRIS · AUTHENTICATION</p>
+  <h1>Authentication Sequence</h1>
+  <p class="subtitle">Mekanisme authentication aktual PPSDMPU-HRIS berdasarkan source code</p>
+  <span class="mock-note">PROTOTYPE · Mock Auth · sessionStorage</span>
+
+  <div class="diagram-wrap">
+    <!--
+      type-sequence
+      viewBox: 0 0 860 764
+
+      Lifelines (5):
+        L1 User           cx=72
+        L2 Login Page     cx=220
+        L3 useAuth        cx=388
+        L4 sessionStorage cx=556
+        L5 ProtectedRoute cx=736
+
+      Actor boxes: y=20, h=48 → lifeline start y=68
+      Lifeline bottom: y=744
+
+      OPT Fragment A (LOGIN BERHASIL):  y=88..420
+      OPT Fragment B (ROUTE TANPA SESSION): y=440..720
+
+      Messages y-levels:
+        Scenario A:
+          M1 User→Login:   y=140  submit credentials
+          M2 Login→useAuth: y=180  login(username, password)
+          M3 useAuth self:  y=216  validateMockCredentials()
+          M4 useAuth→sessionStorage: y=264  setItem('ppsdmpu_session', session)
+          M5 useAuth→Login (return, ACCENT): y=308  { success: true }
+          M6 Login→User (redirect, async-open): y=352  navigate('/dashboard')
+        Scenario B:
+          M7 User→ProtectedRoute: y=496  request /dashboard
+          M8 ProtectedRoute→useAuth: y=532  readSession()
+          M9 useAuth→sessionStorage: y=568  getItem('ppsdmpu_session')
+          M10 sessionStorage→useAuth (return dashed): y=604  null
+          M11 useAuth→ProtectedRoute (return dashed): y=640  isAuthenticated: false
+          M12 ProtectedRoute→User (async-open): y=680  Navigate to="/login"
+
+      Activation bars:
+        Login Page A:    y=140..352  (M1 receives through M6)
+        useAuth A:       y=180..308  (M2 receives through M5)
+        ProtectedRoute B: y=496..680
+        useAuth B:       y=532..640
+    -->
+    <svg
+      viewBox="0 0 860 764"
+      xmlns="http://www.w3.org/2000/svg"
+      role="img"
+      aria-labelledby="seq-title seq-desc"
+      style="width:100%; height:auto;"
+    >
+      <title id="seq-title">Authentication Sequence HRIS PPSDMPU</title>
+      <desc id="seq-desc">Sequence diagram dua skenario: skenario A login berhasil menunjukkan User submit credentials ke Login Page yang memanggil useAuth, useAuth memvalidasi mock credentials, menyimpan session ke sessionStorage, mengembalikan success, kemudian Login Page menavigasi ke dashboard. Skenario B akses tanpa session menunjukkan User mengakses rute terlindungi, ProtectedRoute memanggil useAuth untuk membaca sessionStorage, sessionStorage mengembalikan null, useAuth mengembalikan isAuthenticated false, dan ProtectedRoute melakukan Navigate ke /login.</desc>
+
+      <defs>
+        <!-- Filled arrow: sync call & return -->
+        <marker id="seq-arr" markerWidth="7" markerHeight="6" refX="6" refY="3" orient="auto">
+          <path d="M0,0 L7,3 L0,6 Z" fill="#4f5d75"/>
+        </marker>
+        <!-- Accent filled: headline success -->
+        <marker id="seq-arr-accent" markerWidth="7" markerHeight="6" refX="6" refY="3" orient="auto">
+          <path d="M0,0 L7,3 L0,6 Z" fill="#eb6c36"/>
+        </marker>
+        <!-- Open arrow: async / fire-and-forget (navigate/redirect) -->
+        <marker id="seq-arr-open" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+          <polyline points="0 0, 8 3, 0 6" fill="none" stroke="#4f5d75" stroke-width="1.2"/>
+        </marker>
+        <!-- Link-blue filled: cross-zone call -->
+        <marker id="seq-arr-link" markerWidth="7" markerHeight="6" refX="6" refY="3" orient="auto">
+          <path d="M0,0 L7,3 L0,6 Z" fill="#2e5aa8"/>
+        </marker>
+      </defs>
+
+      <!-- BACKGROUND -->
+      <rect width="860" height="764" fill="#f5f5f5"/>
+
+      <!-- ── ACTOR BOXES (y=20, h=44, rx=6) ──────────────────── -->
+      <!--
+        L1 User:           x=36,   y=20, w=72,  h=44  cx=72
+        L2 Login Page:     x=148,  y=20, w=144, h=44  cx=220
+        L3 useAuth:        x=316,  y=20, w=144, h=44  cx=388
+        L4 sessionStorage: x=484,  y=20, w=144, h=44  cx=556
+        L5 ProtectedRoute: x=656,  y=20, w=160, h=44  cx=736
+      -->
+
+      <!-- L1 User -->
+      <rect x="36" y="20" width="72" height="44" rx="6"
+            fill="rgba(122,131,153,0.10)" stroke="#7a8399" stroke-width="1"/>
+      <rect x="40" y="26" width="28" height="11" rx="2"
+            fill="transparent" stroke="rgba(122,131,153,0.40)" stroke-width="0.8"/>
+      <text x="54" y="35" fill="rgba(122,131,153,0.80)" font-size="7"
+            font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">USER</text>
+      <text x="72" y="52" fill="#2d3142" font-size="11" font-weight="600"
+            font-family="'Geist', sans-serif" text-anchor="middle">User</text>
+
+      <!-- L2 Login Page -->
+      <rect x="148" y="20" width="144" height="44" rx="6"
+            fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+      <rect x="152" y="26" width="28" height="11" rx="2"
+            fill="transparent" stroke="rgba(45,49,66,0.40)" stroke-width="0.8"/>
+      <text x="166" y="35" fill="rgba(45,49,66,0.80)" font-size="7"
+            font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">PAGE</text>
+      <text x="220" y="52" fill="#2d3142" font-size="11" font-weight="600"
+            font-family="'Geist', sans-serif" text-anchor="middle">Login Page</text>
+
+      <!-- L3 useAuth -->
+      <rect x="316" y="20" width="144" height="44" rx="6"
+            fill="rgba(235,108,54,0.08)" stroke="#eb6c36" stroke-width="1"/>
+      <rect x="320" y="26" width="36" height="11" rx="2"
+            fill="transparent" stroke="rgba(235,108,54,0.40)" stroke-width="0.8"/>
+      <text x="338" y="35" fill="rgba(235,108,54,0.80)" font-size="7"
+            font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">HOOK</text>
+      <text x="388" y="52" fill="#2d3142" font-size="11" font-weight="600"
+            font-family="'Geist', sans-serif" text-anchor="middle">useAuth</text>
+
+      <!-- L4 sessionStorage -->
+      <rect x="484" y="20" width="144" height="44" rx="6"
+            fill="rgba(45,49,66,0.05)" stroke="#4f5d75" stroke-width="1"/>
+      <rect x="488" y="26" width="56" height="11" rx="2"
+            fill="transparent" stroke="rgba(79,93,117,0.40)" stroke-width="0.8"/>
+      <text x="516" y="35" fill="rgba(79,93,117,0.80)" font-size="7"
+            font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">BROWSER</text>
+      <text x="556" y="52" fill="#2d3142" font-size="11" font-weight="600"
+            font-family="'Geist', sans-serif" text-anchor="middle">sessionStorage</text>
+
+      <!-- L5 ProtectedRoute -->
+      <rect x="656" y="20" width="168" height="44" rx="6"
+            fill="rgba(235,108,54,0.05)" stroke="rgba(235,108,54,0.50)"
+            stroke-width="1" stroke-dasharray="4,4"/>
+      <rect x="660" y="26" width="40" height="11" rx="2"
+            fill="transparent" stroke="rgba(235,108,54,0.40)" stroke-width="0.8"/>
+      <text x="680" y="35" fill="rgba(235,108,54,0.80)" font-size="7"
+            font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">GUARD</text>
+      <text x="740" y="52" fill="#2d3142" font-size="11" font-weight="600"
+            font-family="'Geist', sans-serif" text-anchor="middle">ProtectedRoute</text>
+
+      <!-- ── LIFELINES (dashed vertical, y=64..744) ────────────── -->
+      <line x1="72"  y1="64" x2="72"  y2="744" stroke="rgba(45,49,66,0.20)" stroke-width="1" stroke-dasharray="3,3"/>
+      <line x1="220" y1="64" x2="220" y2="744" stroke="rgba(45,49,66,0.20)" stroke-width="1" stroke-dasharray="3,3"/>
+      <line x1="388" y1="64" x2="388" y2="744" stroke="rgba(45,49,66,0.20)" stroke-width="1" stroke-dasharray="3,3"/>
+      <line x1="556" y1="64" x2="556" y2="744" stroke="rgba(45,49,66,0.20)" stroke-width="1" stroke-dasharray="3,3"/>
+      <line x1="740" y1="64" x2="740" y2="744" stroke="rgba(45,49,66,0.20)" stroke-width="1" stroke-dasharray="3,3"/>
+
+      <!-- ── OPT FRAME A: LOGIN BERHASIL (y=84..424) ─────────── -->
+      <rect x="52" y="84" width="748" height="340" rx="4"
+            fill="rgba(45,49,66,0.02)" stroke="rgba(45,49,66,0.22)" stroke-width="1"/>
+      <!-- operator tab -->
+      <rect x="52" y="84" width="36" height="16" rx="2"
+            fill="#f5f5f5" stroke="rgba(45,49,66,0.22)" stroke-width="1"/>
+      <text x="70" y="96" fill="#4f5d75" font-size="8"
+            font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.12em">OPT</text>
+      <!-- section label + guard -->
+      <text x="96" y="93" fill="#2d3142" font-size="8.5" font-weight="600"
+            font-family="'Geist Mono', monospace" letter-spacing="0.08em">01 LOGIN BERHASIL</text>
+      <text x="96" y="107" fill="#4f5d75" font-size="8"
+            font-family="'Geist Mono', monospace" letter-spacing="0.04em">[user submit credentials yang valid]</text>
+
+      <!-- ── ACTIVATION BARS SCENARIO A ──────── -->
+      <!-- Login Page active: M1..M6 = y=140..356 -->
+      <rect x="216" y="140" width="8" height="216"
+            fill="rgba(45,49,66,0.06)" stroke="#4f5d75" stroke-width="0.8"/>
+      <!-- useAuth active: M2..M5 = y=180..308 -->
+      <rect x="384" y="180" width="8" height="128"
+            fill="rgba(235,108,54,0.08)" stroke="#eb6c36" stroke-width="0.8"/>
+
+      <!-- ── MESSAGES SCENARIO A ──────────────── -->
+
+      <!-- M1: User → Login Page: submit credentials (sync call) y=140 -->
+      <line x1="72" y1="140" x2="216" y2="140"
+            stroke="#4f5d75" stroke-width="1.2" marker-end="url(#seq-arr)"/>
+      <rect x="96" y="128" width="108" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="150" y="137" fill="#4f5d75" font-size="8"
+            font-family="'Geist Mono', monospace" text-anchor="middle"
+            letter-spacing="0.04em">submit credentials</text>
+
+      <!-- M2: Login Page → useAuth: login(username, password) y=180 -->
+      <line x1="224" y1="180" x2="384" y2="180"
+            stroke="#4f5d75" stroke-width="1.2" marker-end="url(#seq-arr)"/>
+      <rect x="240" y="168" width="128" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="304" y="177" fill="#4f5d75" font-size="8"
+            font-family="'Geist Mono', monospace" text-anchor="middle"
+            letter-spacing="0.04em">login(username, password)</text>
+
+      <!-- M3: useAuth self-loop: validateMockCredentials() + delay 400ms y=212..236 -->
+      <!-- U-shape: right from cx=392, then down, then back to cx=392 -->
+      <polyline points="392,212 424,212 424,236 392,236"
+                fill="none" stroke="#4f5d75" stroke-width="1" stroke-dasharray="3,2"/>
+      <marker id="seq-arr-self" markerWidth="7" markerHeight="6" refX="6" refY="3" orient="auto">
+        <path d="M0,0 L7,3 L0,6 Z" fill="#4f5d75"/>
+      </marker>
+      <line x1="424" y1="236" x2="394" y2="236"
+            stroke="#4f5d75" stroke-width="1" stroke-dasharray="3,2"
+            marker-end="url(#seq-arr)"/>
+      <!-- self-loop label right of the loop -->
+      <rect x="428" y="216" width="188" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="434" y="225" fill="#7a8399" font-size="8"
+            font-family="'Geist Mono', monospace" letter-spacing="0.04em">validateMockCredentials() · 400ms</text>
+
+      <!-- M4: useAuth → sessionStorage: setItem() y=264 -->
+      <line x1="392" y1="264" x2="556" y2="264"
+            stroke="#2e5aa8" stroke-width="1.2" marker-end="url(#seq-arr-link)"/>
+      <rect x="408" y="252" width="136" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="476" y="261" fill="#2e5aa8" font-size="8"
+            font-family="'Geist Mono', monospace" text-anchor="middle"
+            letter-spacing="0.04em">setItem('ppsdmpu_session')</text>
+
+      <!-- M5: useAuth → Login Page: { success: true } — ACCENT return y=308 -->
+      <line x1="384" y1="308" x2="224" y2="308"
+            stroke="#eb6c36" stroke-width="1.4"
+            stroke-dasharray="5,3" marker-end="url(#seq-arr-accent)"/>
+      <rect x="248" y="296" width="120" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="308" y="305" fill="#eb6c36" font-size="8.5"
+            font-family="'Geist Mono', monospace" text-anchor="middle"
+            letter-spacing="0.04em">{ success: true }</text>
+
+      <!-- M6: Login → User: navigate('/dashboard') — async open y=356 -->
+      <line x1="216" y1="356" x2="72" y2="356"
+            stroke="#4f5d75" stroke-width="1"
+            stroke-dasharray="4,3" marker-end="url(#seq-arr-open)"/>
+      <rect x="88" y="344" width="116" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="146" y="353" fill="#4f5d75" font-size="8"
+            font-family="'Geist Mono', monospace" text-anchor="middle"
+            letter-spacing="0.04em">navigate('/dashboard')</text>
+
+      <!-- activation bar close -->
+      <!-- Login: 140..356 already drawn; useAuth: 180..308 already drawn -->
+
+      <!-- ── OPT FRAME B: ROUTE TANPA SESSION (y=444..728) ───── -->
+      <rect x="52" y="444" width="748" height="284" rx="4"
+            fill="rgba(45,49,66,0.02)" stroke="rgba(45,49,66,0.22)" stroke-width="1"/>
+      <!-- operator tab -->
+      <rect x="52" y="444" width="36" height="16" rx="2"
+            fill="#f5f5f5" stroke="rgba(45,49,66,0.22)" stroke-width="1"/>
+      <text x="70" y="456" fill="#4f5d75" font-size="8"
+            font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.12em">OPT</text>
+      <!-- section label + guard -->
+      <text x="96" y="453" fill="#2d3142" font-size="8.5" font-weight="600"
+            font-family="'Geist Mono', monospace" letter-spacing="0.08em">02 PROTECTED ROUTE TANPA SESSION</text>
+      <text x="96" y="467" fill="#4f5d75" font-size="8"
+            font-family="'Geist Mono', monospace" letter-spacing="0.04em">[sessionStorage kosong atau tab baru]</text>
+
+      <!-- ── ACTIVATION BARS SCENARIO B ──────── -->
+      <!-- ProtectedRoute active: M7..M12 = y=496..680 -->
+      <rect x="736" y="496" width="8" height="184"
+            fill="rgba(235,108,54,0.05)" stroke="rgba(235,108,54,0.50)" stroke-width="0.8"/>
+      <!-- useAuth B active: M8..M11 = y=532..640 -->
+      <rect x="384" y="532" width="8" height="108"
+            fill="rgba(45,49,66,0.06)" stroke="#4f5d75" stroke-width="0.8"/>
+
+      <!-- ── MESSAGES SCENARIO B ──────────────── -->
+
+      <!-- M7: User → ProtectedRoute: request /dashboard y=496 -->
+      <line x1="72" y1="496" x2="736" y2="496"
+            stroke="#4f5d75" stroke-width="1.2" marker-end="url(#seq-arr)"/>
+      <rect x="88" y="484" width="124" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="150" y="493" fill="#4f5d75" font-size="8"
+            font-family="'Geist Mono', monospace" text-anchor="middle"
+            letter-spacing="0.04em">akses /dashboard</text>
+
+      <!-- M8: ProtectedRoute → useAuth: readSession() / isAuthenticated y=532 -->
+      <line x1="736" y1="532" x2="392" y2="532"
+            stroke="#4f5d75" stroke-width="1.2" marker-end="url(#seq-arr)"/>
+      <rect x="440" y="520" width="92" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="486" y="529" fill="#4f5d75" font-size="8"
+            font-family="'Geist Mono', monospace" text-anchor="middle"
+            letter-spacing="0.04em">readSession()</text>
+
+      <!-- M9: useAuth → sessionStorage: getItem() y=568 -->
+      <line x1="392" y1="568" x2="556" y2="568"
+            stroke="#2e5aa8" stroke-width="1.2" marker-end="url(#seq-arr-link)"/>
+      <rect x="408" y="556" width="136" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="476" y="565" fill="#2e5aa8" font-size="8"
+            font-family="'Geist Mono', monospace" text-anchor="middle"
+            letter-spacing="0.04em">getItem('ppsdmpu_session')</text>
+
+      <!-- M10: sessionStorage → useAuth: null (return dashed) y=604 -->
+      <line x1="556" y1="604" x2="392" y2="604"
+            stroke="#4f5d75" stroke-width="1"
+            stroke-dasharray="5,3" marker-end="url(#seq-arr)"/>
+      <rect x="408" y="592" width="36" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="426" y="601" fill="#4f5d75" font-size="8"
+            font-family="'Geist Mono', monospace" text-anchor="middle"
+            letter-spacing="0.04em">null</text>
+
+      <!-- M11: useAuth → ProtectedRoute: isAuthenticated: false (return dashed) y=640 -->
+      <line x1="392" y1="640" x2="736" y2="640"
+            stroke="#4f5d75" stroke-width="1"
+            stroke-dasharray="5,3" marker-end="url(#seq-arr)"/>
+      <rect x="440" y="628" width="148" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="514" y="637" fill="#4f5d75" font-size="8"
+            font-family="'Geist Mono', monospace" text-anchor="middle"
+            letter-spacing="0.04em">isAuthenticated: false</text>
+
+      <!-- M12: ProtectedRoute → User: Navigate /login (async open) y=680 -->
+      <line x1="736" y1="680" x2="72" y2="680"
+            stroke="#4f5d75" stroke-width="1"
+            stroke-dasharray="4,3" marker-end="url(#seq-arr-open)"/>
+      <rect x="88" y="668" width="180" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="178" y="677" fill="#4f5d75" font-size="8"
+            font-family="'Geist Mono', monospace" text-anchor="middle"
+            letter-spacing="0.04em">Navigate to="/login" · state: { from }</text>
+
+      <!-- ── LEGEND ─────────────────────────────────────────────── -->
+      <line x1="40" y1="740" x2="820" y2="740"
+            stroke="rgba(45,49,66,0.10)" stroke-width="0.8"/>
+
+      <text x="40" y="753" fill="#4f5d75" font-size="7"
+            font-family="'Geist Mono', monospace" letter-spacing="0.14em">LEGEND</text>
+
+      <!-- sync call -->
+      <line x1="96" y1="749" x2="124" y2="749"
+            stroke="#4f5d75" stroke-width="1.2" marker-end="url(#seq-arr)"/>
+      <text x="130" y="753" fill="#4f5d75" font-size="7.5"
+            font-family="'Geist Mono', monospace">sync call</text>
+
+      <!-- return dashed -->
+      <line x1="218" y1="749" x2="246" y2="749"
+            stroke="#4f5d75" stroke-width="1" stroke-dasharray="4,3"
+            marker-end="url(#seq-arr)"/>
+      <text x="252" y="753" fill="#4f5d75" font-size="7.5"
+            font-family="'Geist Mono', monospace">return</text>
+
+      <!-- accent success -->
+      <line x1="318" y1="749" x2="346" y2="749"
+            stroke="#eb6c36" stroke-width="1.4" stroke-dasharray="5,3"
+            marker-end="url(#seq-arr-accent)"/>
+      <text x="352" y="753" fill="#4f5d75" font-size="7.5"
+            font-family="'Geist Mono', monospace">headline success</text>
+
+      <!-- redirect / navigate async-open -->
+      <line x1="470" y1="749" x2="498" y2="749"
+            stroke="#4f5d75" stroke-width="1" stroke-dasharray="4,3"
+            marker-end="url(#seq-arr-open)"/>
+      <text x="504" y="753" fill="#4f5d75" font-size="7.5"
+            font-family="'Geist Mono', monospace">navigate / redirect</text>
+
+      <!-- cross-zone link -->
+      <line x1="638" y1="749" x2="666" y2="749"
+            stroke="#2e5aa8" stroke-width="1.2" marker-end="url(#seq-arr-link)"/>
+      <text x="672" y="753" fill="#4f5d75" font-size="7.5"
+            font-family="'Geist Mono', monospace">browser storage</text>
+
+    </svg>
+  </div>
+
+  <div class="footer">
+    <p>HRIS PPSDMPU · Authentication Sequence · diagram-design v2.6</p>
+    <p>useAuth.ts · ProtectedRoute.tsx · sessionStorage key: ppsdmpu_session</p>
+  </div>
+</div>
+</body>
+</html>

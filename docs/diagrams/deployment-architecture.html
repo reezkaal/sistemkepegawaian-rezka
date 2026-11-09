@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Deployment Architecture — HRIS PPSDMPU</title>
+      <meta name="description"
+            content="Diagram arsitektur deployment production Sistem Kepegawaian PPSDMPU: Browser, Vercel (React SPA + Serverless Functions), Google Apps Script, Google Spreadsheet.">
+      <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap"
+            rel="stylesheet">
+      <style>
+            *,
+            *::before,
+            *::after {
+                  box-sizing: border-box;
+                  margin: 0;
+                  padding: 0;
+            }
+
+            body {
+                  background: #f5f5f5;
+                  font-family: 'Geist', sans-serif;
+                  color: #2d3142;
+                  padding: 48px 32px 64px;
+                  min-height: 100vh;
+            }
+
+            .page {
+                  max-width: 900px;
+                  margin: 0 auto;
+            }
+
+            .eyebrow {
+                  font-family: 'Geist Mono', monospace;
+                  font-size: 10px;
+                  font-weight: 500;
+                  letter-spacing: 0.18em;
+                  text-transform: uppercase;
+                  color: #7a8399;
+                  margin-bottom: 10px;
+            }
+
+            h1 {
+                  font-family: 'Instrument Serif', serif;
+                  font-size: 1.75rem;
+                  font-weight: 400;
+                  color: #2d3142;
+                  margin-bottom: 6px;
+            }
+
+            .subtitle {
+                  font-family: 'Geist', sans-serif;
+                  font-size: 13px;
+                  color: #4f5d75;
+                  margin-bottom: 40px;
+            }
+
+            .diagram-wrap {
+                  width: 100%;
+                  overflow-x: auto;
+            }
+
+            svg {
+                  display: block;
+                  max-width: 100%;
+            }
+
+            .footer {
+                  margin-top: 40px;
+                  padding-top: 16px;
+                  border-top: 1px solid rgba(45, 49, 66, 0.12);
+                  display: flex;
+                  justify-content: space-between;
+                  align-items: center;
+            }
+
+            .footer p {
+                  font-family: 'Geist Mono', monospace;
+                  font-size: 9px;
+                  letter-spacing: 0.10em;
+                  color: #7a8399;
+            }
+      </style>
+</head>
+
+<body>
+      <div class="page">
+            <p class="eyebrow">PPSDMPU · HRIS · DEPLOYMENT PRODUCTION</p>
+            <h1>Deployment Architecture</h1>
+            <p class="subtitle">Komponen aktif saat production berjalan — browser, Vercel hosting, dan Google backend
+            </p>
+
+            <div class="diagram-wrap">
+                  <!--
+      SVG viewBox: 860 × 860
+      Legend: +64px → total height 860
+      Grid: 4px
+
+      Zone layouts (top-down):
+        CLIENT  zone: y=28..124     height=96
+        VERCEL  zone: y=148..464    height=316
+        GOOGLE  zone: y=488..768    height=280
+
+      Nodes (infra nodes, rx=6):
+        N1 Browser:                 x=320, y=48,  w=220, h=56  cx=430 cy=76
+        N2 React SPA:               x=60,  y=176, w=280, h=80  cx=200 cy=216  (w/ artifact chip)
+        N3 Vercel Functions:        x=440, y=176, w=360, h=176 cx=620 cy=264  (w/ 2 artifact chips) FOCAL
+        N4 Google Apps Script:      x=60,  y=512, w=348, h=80  cx=234 cy=552  (w/ artifact chip)
+        N5 Google Spreadsheet:      x=460, y=512, w=340, h=80  cx=630 cy=552  (w/ artifact chip)
+
+      Network paths (6):
+        P1 Browser → React SPA         HTTPS:443  solid muted    left branch down
+        P2 Browser → Vercel Functions   HTTPS:443  solid muted    right branch down
+        P3 Vercel Functions → GAS       HTTPS:443  solid link     cross-zone
+        P4 GAS → Spreadsheet            Sheets API solid muted    same zone horizontal
+        P5 GAS → Vercel Functions       JSON       dashed muted   return path
+        P6 Vercel Functions → Browser   JSON       dashed muted   return path
+    -->
+                  <svg viewBox="0 0 860 860" xmlns="http://www.w3.org/2000/svg" role="img"
+                        aria-labelledby="deploy-title deploy-desc" style="width:100%; height:auto;">
+                        <title id="deploy-title">Deployment Architecture HRIS PPSDMPU</title>
+                        <desc id="deploy-desc">Diagram deployment production tiga-zona: Browser di zona Client terhubung
+                              via HTTPS ke React SPA statis dan Vercel Serverless Functions di zona Vercel; Vercel
+                              Functions mem-proxy request ke Google Apps Script yang membaca Google Spreadsheet DUK di
+                              zona Google.</desc>
+
+                        <defs>
+                              <marker id="d-arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+                                    <polygon points="0 0, 8 3, 0 6" fill="#4f5d75" />
+                              </marker>
+                              <marker id="d-arrow-link" markerWidth="8" markerHeight="6" refX="7" refY="3"
+                                    orient="auto">
+                                    <polygon points="0 0, 8 3, 0 6" fill="#2e5aa8" />
+                              </marker>
+                              <marker id="d-arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3"
+                                    orient="auto">
+                                    <polygon points="0 0, 8 3, 0 6" fill="#eb6c36" />
+                              </marker>
+                        </defs>
+
+                        <!-- ─── BACKGROUND ─────────────────────────────── -->
+                        <rect width="860" height="860" fill="#f5f5f5" />
+
+                        <!-- ─── ZONES (z-order: first) ────────────────── -->
+
+                        <!-- Zone CLIENT -->
+                        <rect x="24" y="28" width="812" height="96" rx="8" fill="rgba(45,49,66,0.02)"
+                              stroke="rgba(45,49,66,0.20)" stroke-width="0.8" stroke-dasharray="4,4" />
+                        <rect x="36" y="32" width="56" height="12" rx="2" fill="#f5f5f5" />
+                        <text x="64" y="41" fill="rgba(45,49,66,0.40)" font-size="7"
+                              font-family="'Geist Mono', monospace" text-anchor="middle"
+                              letter-spacing="0.14em">CLIENT</text>
+
+                        <!-- Zone VERCEL -->
+                        <rect x="24" y="148" width="812" height="312" rx="8" fill="rgba(45,49,66,0.02)"
+                              stroke="rgba(45,49,66,0.20)" stroke-width="0.8" stroke-dasharray="4,4" />
+                        <rect x="36" y="152" width="52" height="12" rx="2" fill="#f5f5f5" />
+                        <text x="62" y="161" fill="rgba(45,49,66,0.40)" font-size="7"
+                              font-family="'Geist Mono', monospace" text-anchor="middle"
+                              letter-spacing="0.14em">VERCEL</text>
+
+                        <!-- Zone GOOGLE -->
+                        <rect x="24" y="488" width="812" height="276" rx="8" fill="rgba(45,49,66,0.02)"
+                              stroke="rgba(45,49,66,0.20)" stroke-width="0.8" stroke-dasharray="4,4" />
+                        <rect x="36" y="492" width="60" height="12" rx="2" fill="#f5f5f5" />
+                        <text x="66" y="501" fill="rgba(45,49,66,0.40)" font-size="7"
+                              font-family="'Geist Mono', monospace" text-anchor="middle"
+                              letter-spacing="0.14em">GOOGLE</text>
+
+                        <!-- ─── NETWORK PATHS (z-order: before nodes) ─── -->
+
+                        <!--
+        Node geometry for path calculations:
+        N1 Browser:           x=320 y=48  w=220 h=56  → bot=104  cx=430
+                              left=320 right=540
+        N2 React SPA:         x=60  y=176 w=280 h=80  → top=176 bot=256  cx=200
+                              left=60 right=340
+        N3 Vercel Functions:  x=440 y=176 w=360 h=176 → top=176 bot=352  cx=620
+                              left=440 right=800
+        N4 GAS:               x=60  y=512 w=348 h=80  → top=512 bot=592  cx=234
+                              left=60 right=408
+        N5 Spreadsheet:       x=460 y=512 w=340 h=80  → top=512  cx=630
+                              left=460 right=800
+      -->
+
+                        <!-- P1: Browser → React SPA (HTTPS:443, static assets) -->
+                        <!-- Source: Browser bottom-left, x=380, y=104 → Target: React SPA top cx=200, y=176 -->
+                        <path d="M 380 104 L 380 140 L 200 140 L 200 176" fill="none" stroke="#4f5d75"
+                              stroke-width="1.2" marker-end="url(#d-arrow)" />
+                        <!-- label mask on horizontal segment at y=140 -->
+                        <rect x="246" y="128" width="72" height="12" rx="2" fill="#f5f5f5" />
+                        <text x="282" y="137" fill="#7a8399" font-size="8" font-family="'Geist Mono', monospace"
+                              text-anchor="middle" letter-spacing="0.06em">HTTPS:443</text>
+
+                        <!-- P2: Browser → Vercel Functions (HTTPS:443, fetch /api/*) -->
+                        <!-- Source: Browser bottom-right, x=480, y=104 → Target: Vercel Functions top cx=620, y=176 -->
+                        <path d="M 480 104 L 480 140 L 620 140 L 620 176" fill="none" stroke="#2e5aa8"
+                              stroke-width="1.2" marker-end="url(#d-arrow-link)" />
+                        <!-- label mask — at y=140, centered between 480 and 620 = 550, but 282 used already, use different y -->
+                        <rect x="494" y="128" width="72" height="12" rx="2" fill="#f5f5f5" />
+                        <text x="530" y="137" fill="#2e5aa8" font-size="8" font-family="'Geist Mono', monospace"
+                              text-anchor="middle" letter-spacing="0.06em">HTTPS:443</text>
+
+                        <!-- P3: Vercel Functions → Google Apps Script (HTTPS:443, proxy request) -->
+                        <!-- Source: Vercel Functions bottom cx=620, y=352 → Target: GAS top cx=234, y=512 -->
+                        <!-- Cross-zone: link-blue, two-bend path -->
+                        <!-- Down from 620,352 → 620,468 → 234,468 → 234,512 -->
+                        <path d="M 620 352 L 620 468 L 234 468 L 234 512" fill="none" stroke="#2e5aa8"
+                              stroke-width="1.2" marker-end="url(#d-arrow-link)" />
+                        <!-- label on horizontal segment at y=468 -->
+                        <rect x="364" y="456" width="96" height="12" rx="2" fill="#f5f5f5" />
+                        <text x="412" y="465" fill="#2e5aa8" font-size="8" font-family="'Geist Mono', monospace"
+                              text-anchor="middle" letter-spacing="0.06em">HTTPS:443 GET</text>
+
+                        <!-- P4: Google Apps Script → Google Spreadsheet (Sheets API, internal) -->
+                        <!-- Source: GAS right=408, cy=552 → Target: Spreadsheet left=460, cy=552 -->
+                        <path d="M 408 552 L 460 552" fill="none" stroke="#4f5d75" stroke-width="1.2"
+                              marker-end="url(#d-arrow)" />
+                        <!-- label above horizontal segment -->
+                        <rect x="398" y="540" width="80" height="12" rx="2" fill="#f5f5f5" />
+                        <text x="438" y="549" fill="#7a8399" font-size="8" font-family="'Geist Mono', monospace"
+                              text-anchor="middle" letter-spacing="0.06em">SHEETS API</text>
+
+                        <!-- P5: GAS → Vercel Functions (JSON response, dashed return path) -->
+                        <!-- Offset from P3: run at x=248 upward (P3 ran at x=234) -->
+                        <!-- Source: GAS top, x=248, y=512 → 248,444 → 640,444 → 640,352 -->
+                        <path d="M 248 512 L 248 444 L 640 444 L 640 352" fill="none" stroke="#4f5d75" stroke-width="1"
+                              stroke-dasharray="4,3" marker-end="url(#d-arrow)" />
+                        <!-- label on horizontal segment at y=444 -->
+                        <rect x="398" y="432" width="48" height="12" rx="2" fill="#f5f5f5" />
+                        <text x="422" y="441" fill="#7a8399" font-size="8" font-family="'Geist Mono', monospace"
+                              text-anchor="middle" letter-spacing="0.06em">JSON</text>
+
+                        <!-- P6: Vercel Functions → Browser (JSON response, dashed return) -->
+                        <!-- Offset from P2: run at x=496, going up -->
+                        <!-- Source: Vercel Functions top, x=496, y=176 → 496,128 → 464,128 → 464,104 -->
+                        <path d="M 496 176 L 496 120 L 464 120 L 464 104" fill="none" stroke="#4f5d75" stroke-width="1"
+                              stroke-dasharray="4,3" marker-end="url(#d-arrow)" />
+                        <!-- label left of vertical segment at x=484 -->
+                        <rect x="508" y="128" width="48" height="12" rx="2" fill="#f5f5f5" />
+                        <text x="532" y="137" fill="#7a8399" font-size="8" font-family="'Geist Mono', monospace"
+                              text-anchor="middle" letter-spacing="0.06em">JSON</text>
+
+                        <!-- ─── INFRA NODES ──────────────────────────── -->
+
+                        <!-- N1: Browser (input/user type) -->
+                        <!-- x=320, y=48, w=220, h=56, cx=430, cy=76 -->
+                        <rect x="320" y="48" width="220" height="56" rx="6" fill="#f5f5f5" />
+                        <rect x="320" y="48" width="220" height="56" rx="6" fill="rgba(122,131,153,0.10)"
+                              stroke="#7a8399" stroke-width="1" />
+                        <!-- type tag -->
+                        <rect x="328" y="55" width="44" height="11" rx="2" fill="transparent"
+                              stroke="rgba(122,131,153,0.40)" stroke-width="0.8" />
+                        <text x="350" y="64" fill="rgba(122,131,153,0.80)" font-size="7"
+                              font-family="'Geist Mono', monospace" text-anchor="middle"
+                              letter-spacing="0.08em">CLIENT</text>
+                        <!-- node name -->
+                        <text x="430" y="73" fill="#2d3142" font-size="12" font-weight="600"
+                              font-family="'Geist', sans-serif" text-anchor="middle">Browser</text>
+                        <!-- sublabel -->
+                        <text x="430" y="87" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace"
+                              text-anchor="middle">Pengguna Dashboard</text>
+                        <!-- artifact chip -->
+                        <rect x="328" y="91" width="216" height="6" rx="2" fill="rgba(45,49,66,0.05)"
+                              stroke="rgba(79,93,117,0.30)" stroke-width="0.6" />
+
+                        <!-- N2: React SPA (managed CDN static) -->
+                        <!-- x=60, y=176, w=280, h=80, cx=200, cy=216 -->
+                        <rect x="60" y="176" width="280" height="80" rx="6" fill="#f5f5f5" />
+                        <rect x="60" y="176" width="280" height="80" rx="6" fill="#ffffff" stroke="#2d3142"
+                              stroke-width="1" />
+                        <!-- type tag -->
+                        <rect x="68" y="183" width="36" height="11" rx="2" fill="transparent"
+                              stroke="rgba(45,49,66,0.40)" stroke-width="0.8" />
+                        <text x="86" y="192" fill="rgba(45,49,66,0.80)" font-size="7"
+                              font-family="'Geist Mono', monospace" text-anchor="middle"
+                              letter-spacing="0.08em">CDN</text>
+                        <!-- node name -->
+                        <text x="200" y="207" fill="#2d3142" font-size="12" font-weight="600"
+                              font-family="'Geist', sans-serif" text-anchor="middle">React SPA</text>
+                        <!-- sublabel -->
+                        <text x="200" y="221" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace"
+                              text-anchor="middle">Static Build · Vercel Edge CDN</text>
+                        <!-- artifact chip -->
+                        <rect x="68" y="232" width="264" height="16" rx="2" fill="rgba(45,49,66,0.05)"
+                              stroke="rgba(79,93,117,0.30)" stroke-width="0.6" />
+                        <text x="76" y="243" fill="#2d3142" font-size="11" font-weight="600"
+                              font-family="'Geist', sans-serif">ppsdmpu-hris</text>
+                        <text x="324" y="243" fill="#7a8399" font-size="9" font-family="'Geist Mono', monospace"
+                              text-anchor="end">React 18 · Vite 5</text>
+
+                        <!-- N3: Vercel Serverless Functions — FOCAL (accent) -->
+                        <!-- x=440, y=176, w=360, h=176, cx=620, cy=264 -->
+                        <rect x="440" y="176" width="360" height="176" rx="6" fill="#f5f5f5" />
+                        <rect x="440" y="176" width="360" height="176" rx="6" fill="rgba(235,108,54,0.08)"
+                              stroke="#eb6c36" stroke-width="1" />
+                        <!-- type tag -->
+                        <rect x="448" y="183" width="72" height="11" rx="2" fill="transparent"
+                              stroke="rgba(235,108,54,0.40)" stroke-width="0.8" />
+                        <text x="484" y="192" fill="rgba(235,108,54,0.80)" font-size="7"
+                              font-family="'Geist Mono', monospace" text-anchor="middle"
+                              letter-spacing="0.08em">SERVERLESS</text>
+                        <!-- node name -->
+                        <text x="620" y="210" fill="#2d3142" font-size="12" font-weight="600"
+                              font-family="'Geist', sans-serif" text-anchor="middle">Serverless Functions</text>
+                        <!-- sublabel -->
+                        <text x="620" y="225" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace"
+                              text-anchor="middle">Request Proxy — URL GAS tidak dikirim ke browser</text>
+
+                        <!-- artifact chip 1: /api/employees -->
+                        <rect x="448" y="236" width="344" height="28" rx="2" fill="rgba(45,49,66,0.05)"
+                              stroke="rgba(79,93,117,0.30)" stroke-width="0.6" />
+                        <!-- chip label left -->
+                        <text x="460" y="248" fill="#2d3142" font-size="11" font-weight="600"
+                              font-family="'Geist', sans-serif">GET /api/employees</text>
+                        <!-- chip sublabel right -->
+                        <text x="784" y="248" fill="#7a8399" font-size="9" font-family="'Geist Mono', monospace"
+                              text-anchor="end">timeout: 60s</text>
+                        <!-- chip bottom sublabel -->
+                        <text x="460" y="259" fill="#7a8399" font-size="8.5"
+                              font-family="'Geist Mono', monospace">api/employees.ts · @vercel/node v7</text>
+
+                        <!-- artifact chip 2: /api/leave -->
+                        <rect x="448" y="272" width="344" height="28" rx="2" fill="rgba(45,49,66,0.05)"
+                              stroke="rgba(79,93,117,0.30)" stroke-width="0.6" />
+                        <text x="460" y="284" fill="#2d3142" font-size="11" font-weight="600"
+                              font-family="'Geist', sans-serif">GET /api/leave</text>
+                        <text x="784" y="284" fill="#7a8399" font-size="9" font-family="'Geist Mono', monospace"
+                              text-anchor="end">timeout: 35s</text>
+                        <text x="460" y="295" fill="#7a8399" font-size="8.5"
+                              font-family="'Geist Mono', monospace">api/leave.ts · @vercel/node v7</text>
+
+                        <!-- env var note inside node -->
+                        <rect x="448" y="308" width="344" height="28" rx="2" fill="rgba(45,49,66,0.02)"
+                              stroke="rgba(45,49,66,0.12)" stroke-width="0.6" stroke-dasharray="3,3" />
+                        <text x="460" y="320" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace">env:
+                              GOOGLE_APPS_SCRIPT_URL</text>
+                        <text x="460" y="332" fill="#7a8399" font-size="8.5"
+                              font-family="'Geist Mono', monospace">Vercel Dashboard env var — server-side only</text>
+
+                        <!-- N4: Google Apps Script (external managed) -->
+                        <!-- x=60, y=512, w=348, h=80, cx=234, cy=552 -->
+                        <rect x="60" y="512" width="348" height="80" rx="6" fill="#f5f5f5" />
+                        <rect x="60" y="512" width="348" height="80" rx="6" fill="rgba(45,49,66,0.03)"
+                              stroke="rgba(45,49,66,0.30)" stroke-width="1" />
+                        <!-- type tag -->
+                        <rect x="68" y="519" width="60" height="11" rx="2" fill="transparent"
+                              stroke="rgba(45,49,66,0.30)" stroke-width="0.8" />
+                        <text x="98" y="528" fill="rgba(45,49,66,0.50)" font-size="7"
+                              font-family="'Geist Mono', monospace" text-anchor="middle"
+                              letter-spacing="0.08em">MANAGED</text>
+                        <!-- node name -->
+                        <text x="234" y="546" fill="#2d3142" font-size="12" font-weight="600"
+                              font-family="'Geist', sans-serif" text-anchor="middle">Google Apps Script</text>
+                        <!-- sublabel -->
+                        <text x="234" y="560" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace"
+                              text-anchor="middle">Web App · Execute as: Me · Access: Anyone</text>
+                        <!-- artifact chip -->
+                        <rect x="68" y="572" width="332" height="12" rx="2" fill="rgba(45,49,66,0.05)"
+                              stroke="rgba(79,93,117,0.30)" stroke-width="0.6" />
+                        <text x="76" y="581" fill="#2d3142" font-size="10" font-weight="600"
+                              font-family="'Geist', sans-serif">Code.gs</text>
+                        <text x="392" y="581" fill="#7a8399" font-size="9" font-family="'Geist Mono', monospace"
+                              text-anchor="end">cache: 180s · doGet()</text>
+
+                        <!-- N5: Google Spreadsheet (data store) -->
+                        <!-- x=460, y=512, w=340, h=80, cx=630, cy=552 -->
+                        <rect x="460" y="512" width="340" height="80" rx="6" fill="#f5f5f5" />
+                        <rect x="460" y="512" width="340" height="80" rx="6" fill="rgba(45,49,66,0.05)" stroke="#4f5d75"
+                              stroke-width="1" />
+                        <!-- type tag -->
+                        <rect x="468" y="519" width="80" height="11" rx="2" fill="transparent"
+                              stroke="rgba(79,93,117,0.40)" stroke-width="0.8" />
+                        <text x="508" y="528" fill="rgba(79,93,117,0.80)" font-size="7"
+                              font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">DATA
+                              STORE</text>
+                        <!-- node name -->
+                        <text x="630" y="546" fill="#2d3142" font-size="12" font-weight="600"
+                              font-family="'Geist', sans-serif" text-anchor="middle">Google Spreadsheet</text>
+                        <!-- sublabel -->
+                        <text x="630" y="560" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace"
+                              text-anchor="middle">Sheet: DUK · Data baris 8+</text>
+                        <!-- artifact chip -->
+                        <rect x="468" y="572" width="324" height="12" rx="2" fill="rgba(45,49,66,0.05)"
+                              stroke="rgba(79,93,117,0.30)" stroke-width="0.6" />
+                        <text x="476" y="581" fill="#2d3142" font-size="10" font-weight="600"
+                              font-family="'Geist', sans-serif">Data Kepegawaian</text>
+                        <text x="784" y="581" fill="#7a8399" font-size="9" font-family="'Geist Mono', monospace"
+                              text-anchor="end">Read-only by design</text>
+
+                        <!-- ─── LEGEND ──────────────────────────────── -->
+                        <line x1="40" y1="796" x2="820" y2="796" stroke="rgba(45,49,66,0.10)" stroke-width="0.8" />
+                        <text x="40" y="809" fill="#4f5d75" font-size="7.5" font-family="'Geist Mono', monospace"
+                              letter-spacing="0.14em">LEGEND</text>
+
+                        <!-- focal node sample -->
+                        <rect x="96" y="800" width="24" height="12" rx="3" fill="rgba(235,108,54,0.08)" stroke="#eb6c36"
+                              stroke-width="1" />
+                        <text x="128" y="810" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace">FOCAL
+                              NODE</text>
+
+                        <!-- external HTTP -->
+                        <line x1="232" y1="806" x2="260" y2="806" stroke="#2e5aa8" stroke-width="1.2"
+                              marker-end="url(#d-arrow-link)" />
+                        <text x="268" y="810" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace">HTTPS
+                              REQUEST</text>
+
+                        <!-- internal muted -->
+                        <line x1="380" y1="806" x2="408" y2="806" stroke="#4f5d75" stroke-width="1.2"
+                              marker-end="url(#d-arrow)" />
+                        <text x="416" y="810" fill="#4f5d75" font-size="8"
+                              font-family="'Geist Mono', monospace">INTERNAL / SHEETS</text>
+
+                        <!-- dashed return -->
+                        <line x1="556" y1="806" x2="584" y2="806" stroke="#4f5d75" stroke-width="1"
+                              stroke-dasharray="4,3" marker-end="url(#d-arrow)" />
+                        <text x="592" y="810" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace">JSON
+                              RESPONSE</text>
+
+                        <!-- zone boundary sample -->
+                        <rect x="712" y="800" width="24" height="12" rx="3" fill="rgba(45,49,66,0.02)"
+                              stroke="rgba(45,49,66,0.20)" stroke-width="0.8" stroke-dasharray="4,4" />
+                        <text x="744" y="810" fill="#4f5d75" font-size="8"
+                              font-family="'Geist Mono', monospace">ZONE</text>
+
+                  </svg>
+            </div>
+
+            <div class="footer">
+                  <p>HRIS PPSDMPU · Deployment Production · diagram-design v2.6</p>
+                  <p>Vercel @node v7 · React 18.3 · Google Apps Script · Spreadsheet ID: 1Xjan2kKN…</p>
+            </div>
+      </div>
+</body>
+
+</html>

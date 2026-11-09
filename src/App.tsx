@@ -6,6 +6,7 @@ import Dashboard from '@/pages/Dashboard'
 import Employees from '@/pages/Employees'
 import EmployeeDetail from '@/pages/EmployeeDetail'
 import Leave from '@/pages/Leave'
+import Persuratan from '@/pages/Persuratan'
 
 export default function App() {
   return (
@@ -20,6 +21,7 @@ export default function App() {
             <Route path="/pegawai" element={<Employees />} />
             <Route path="/pegawai/:nip" element={<EmployeeDetail />} />
             <Route path="/cuti" element={<Leave />} />
+            <Route path="/persuratan" element={<Persuratan />} />
           </Route>
         </Route>
 
