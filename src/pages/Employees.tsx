@@ -76,7 +76,7 @@ export default function Employees() {
       </div>
 
       <Card>
-        <CardContent className="p-4 sm:p-6">
+        <CardContent className="p-4 sm:p-5">
           <EmployeeFilters
             namaQuery={namaQuery}
             onNamaQueryChange={setNamaQuery}
