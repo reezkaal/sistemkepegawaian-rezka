@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { getLeaveRecords } from '@/services/api'
 import type { LeaveRecord, LeaveYearValue } from '@/types/leave'
 
@@ -37,6 +37,10 @@ export interface LeaveTableRow {
 interface UseLeaveTableResult {
   isLoading: boolean
   error: string | null
+  refreshError: string | null
+  clearRefreshError: () => void
+  lastUpdated: Date | null
+  refetch: () => Promise<void>
   pageItems: LeaveTableRow[]
   totalResults: number
   page: number
@@ -71,8 +75,50 @@ export function useLeaveTable(
   const [allRecords, setAllRecords] = useState<LeaveRecord[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [refreshError, setRefreshError] = useState<string | null>(null)
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
   const [page, setPage] = useState(1)
   const [namaSortDirection, setNamaSortDirection] = useState<NamaSortDirection>(null)
+
+  const clearRefreshError = useCallback(() => {
+    setRefreshError(null)
+  }, [])
+
+  const loadData = useCallback(async (isRefresh = false) => {
+    setIsLoading(true)
+    if (isRefresh) {
+      setRefreshError(null)
+    } else {
+      setError(null)
+    }
+
+    try {
+      const data = await getLeaveRecords(isRefresh ? { forceRefresh: true } : undefined)
+      setAllRecords(data)
+      setLastUpdated(new Date())
+      if (!isRefresh) {
+        setError(null)
+      }
+      setRefreshError(null)
+    } catch {
+      if (isRefresh) {
+        setRefreshError('Gagal memperbarui data cuti. Silakan coba lagi.')
+      } else {
+        setError('Gagal memuat data cuti. Silakan muat ulang halaman.')
+      }
+    } finally {
+      setIsLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    loadData(false)
+  }, [loadData])
+
+  const refetch = useCallback(async () => {
+    if (isLoading) return
+    await loadData(true)
+  }, [isLoading, loadData])
 
   // Toggle sorting Nama: klik 1=A-Z, klik 2=Z-A, klik 3=kembali ke urutan
   // default/asli API. Reset ke halaman 1 dilakukan LANGSUNG di sini (bukan
@@ -83,30 +129,6 @@ export function useLeaveTable(
     setNamaSortDirection((prev) => (prev === null ? 'asc' : prev === 'asc' ? 'desc' : null))
     setPage(1)
   }
-
-  useEffect(() => {
-    let isActive = true
-    setIsLoading(true)
-    setError(null)
-
-    getLeaveRecords()
-      .then((data) => {
-        if (!isActive) return
-        setAllRecords(data)
-      })
-      .catch(() => {
-        if (!isActive) return
-        setError('Gagal memuat data cuti. Silakan muat ulang halaman.')
-      })
-      .finally(() => {
-        if (!isActive) return
-        setIsLoading(false)
-      })
-
-    return () => {
-      isActive = false
-    }
-  }, [])
 
   // Reset ke halaman 1 setiap kali filter berubah. Perubahan sorting TIDAK
   // dimasukkan di sini — itu ditangani langsung di dalam `onToggleNamaSort`
@@ -163,6 +185,10 @@ export function useLeaveTable(
   return {
     isLoading,
     error,
+    refreshError,
+    clearRefreshError,
+    lastUpdated,
+    refetch,
     pageItems,
     totalResults: filtered.length,
     page: safePage,

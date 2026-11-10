@@ -8,7 +8,12 @@ import type {
 } from '@/types/dashboard'
 import { mockEmployees } from '@/mock/employees'
 import { mockLeaveRecords, mockLeaveTypeSummary, mockLeaveHistory } from '@/mock/leave'
-import { getRemoteEmployees, getRemoteLeaveRecords } from '@/services/remoteDataSource'
+import {
+  getRemoteEmployees,
+  getRemoteLeaveRecords,
+  invalidateRemoteEmployeesCache,
+  invalidateRemoteLeaveCache,
+} from '@/services/remoteDataSource'
 
 /**
  * Service layer terpusat untuk semua akses data.
@@ -49,6 +54,16 @@ function delay<T>(value: T): Promise<T> {
 let _employeesPromise: Promise<Employee[]> | null = null
 let _leaveRecordsPromise: Promise<LeaveRecord[]> | null = null
 
+export function invalidateEmployeesCache(): void {
+  _employeesPromise = null
+  invalidateRemoteEmployeesCache()
+}
+
+export function invalidateLeaveRecordsCache(): void {
+  _leaveRecordsPromise = null
+  invalidateRemoteLeaveCache()
+}
+
 /** Raw accessor - satu-satunya tempat yang tahu apakah data dari mock atau remote. */
 function getRawEmployees(): Promise<Employee[]> {
   if (DATA_SOURCE !== 'remote') return delay(mockEmployees)
@@ -83,7 +98,10 @@ function toEmployeeListItem(e: Employee): EmployeeListItem {
   }
 }
 
-export async function getEmployees(): Promise<EmployeeListItem[]> {
+export async function getEmployees(options?: { forceRefresh?: boolean }): Promise<EmployeeListItem[]> {
+  if (options?.forceRefresh) {
+    invalidateEmployeesCache()
+  }
   const employees = await getRawEmployees()
   return employees.map(toEmployeeListItem)
 }
@@ -118,7 +136,10 @@ export async function getLeaveData(): Promise<LeaveRecord[]> {
  * Dipakai oleh halaman `/cuti` (Checkpoint A3).
  * Struktur dari sheet "NILAI CUTI TAHUNAN - AWAL TAHUN" di DUK_Copy.xlsx.
  */
-export async function getLeaveRecords(): Promise<LeaveRecord[]> {
+export async function getLeaveRecords(options?: { forceRefresh?: boolean }): Promise<LeaveRecord[]> {
+  if (options?.forceRefresh) {
+    invalidateLeaveRecordsCache()
+  }
   return getRawLeaveRecords()
 }
 

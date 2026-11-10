@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { getEmployees } from '@/services/api'
 import type { EmployeeListItem } from '@/types/employee'
 
@@ -15,6 +15,10 @@ export type NamaSortDirection = 'asc' | 'desc' | null
 interface UseEmployeeListResult {
   isLoading: boolean
   error: string | null
+  refreshError: string | null
+  clearRefreshError: () => void
+  lastUpdated: Date | null
+  refetch: () => Promise<void>
   /** Baris untuk halaman aktif saat ini (setelah search + filter + pagination). */
   pageItems: EmployeeListItem[]
   /** Jumlah total hasil setelah search + filter (sebelum pagination). */
@@ -56,8 +60,50 @@ export function useEmployeeList(
   const [allEmployees, setAllEmployees] = useState<EmployeeListItem[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [refreshError, setRefreshError] = useState<string | null>(null)
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
   const [page, setPage] = useState(1)
   const [namaSortDirection, setNamaSortDirection] = useState<NamaSortDirection>(null)
+
+  const clearRefreshError = useCallback(() => {
+    setRefreshError(null)
+  }, [])
+
+  const loadData = useCallback(async (isRefresh = false) => {
+    setIsLoading(true)
+    if (isRefresh) {
+      setRefreshError(null)
+    } else {
+      setError(null)
+    }
+
+    try {
+      const data = await getEmployees(isRefresh ? { forceRefresh: true } : undefined)
+      setAllEmployees(data)
+      setLastUpdated(new Date())
+      if (!isRefresh) {
+        setError(null)
+      }
+      setRefreshError(null)
+    } catch {
+      if (isRefresh) {
+        setRefreshError('Gagal memperbarui data pegawai. Silakan coba lagi.')
+      } else {
+        setError('Gagal memuat data pegawai. Silakan muat ulang halaman.')
+      }
+    } finally {
+      setIsLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    loadData(false)
+  }, [loadData])
+
+  const refetch = useCallback(async () => {
+    if (isLoading) return
+    await loadData(true)
+  }, [isLoading, loadData])
 
   // Toggle sorting Nama: klik 1=A-Z, klik 2=Z-A, klik 3=kembali ke urutan
   // default/asli API. Reset ke halaman 1 dilakukan LANGSUNG di sini (bukan
@@ -68,30 +114,6 @@ export function useEmployeeList(
     setNamaSortDirection((prev) => (prev === null ? 'asc' : prev === 'asc' ? 'desc' : null))
     setPage(1)
   }
-
-  useEffect(() => {
-    let isActive = true
-    setIsLoading(true)
-    setError(null)
-
-    getEmployees()
-      .then((data) => {
-        if (!isActive) return
-        setAllEmployees(data)
-      })
-      .catch(() => {
-        if (!isActive) return
-        setError('Gagal memuat data pegawai. Silakan muat ulang halaman.')
-      })
-      .finally(() => {
-        if (!isActive) return
-        setIsLoading(false)
-      })
-
-    return () => {
-      isActive = false
-    }
-  }, [])
 
   const satkerOptions = useMemo(() => {
     const values = new Set(allEmployees.map((e) => e.satker))
@@ -179,6 +201,10 @@ export function useEmployeeList(
   return {
     isLoading,
     error,
+    refreshError,
+    clearRefreshError,
+    lastUpdated,
+    refetch,
     pageItems,
     totalResults: filtered.length,
     satkerOptions,

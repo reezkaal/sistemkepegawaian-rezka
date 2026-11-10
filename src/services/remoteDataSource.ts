@@ -78,6 +78,14 @@ interface RemoteLeaveYearRow {
 let pendingEmployeesRequest: Promise<RemoteEmployeeRow[]> | null = null
 let pendingLeaveRequest: Promise<RemoteLeaveYearRow[]> | null = null
 
+export function invalidateRemoteEmployeesCache(): void {
+  pendingEmployeesRequest = null
+}
+
+export function invalidateRemoteLeaveCache(): void {
+  pendingLeaveRequest = null
+}
+
 /**
  * Fetch /api/employees — Vercel serverless proxy ke GAS.
  * Path relatif agar berfungsi di semua environment (Vercel production,
