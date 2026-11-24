@@ -135,334 +135,347 @@ export default defineConfig(function (_a) {
                     .catch(next);
             });
             // Dev proxy untuk /api/auth/create-user
-            // Meneruskan request POST ke handler lokal yang memanggil Supabase Admin API.
-            if (supabaseUrl && serviceRoleKey && supabaseAnonKey) {
-                server.middlewares.use('/api/auth/create-user', function (req, res, next) { return __awaiter(_this, void 0, void 0, function () {
-                    var chunks, chunk, e_1_1, body, authHeader, createClient, callerToken, supabaseAnon, _a, callerUser, authErr, supaAdmin, profile, callerRole, email, password, nama, nip, role, _b, newUser, createErr, status_1, err_2;
-                    var _c, req_1, req_1_1;
-                    var _d, e_1, _e, _f;
-                    return __generator(this, function (_g) {
-                        switch (_g.label) {
-                            case 0:
-                                if (req.method !== 'POST') {
-                                    res.statusCode = 405;
-                                    res.setHeader('Content-Type', 'application/json');
-                                    res.end(JSON.stringify({ error: 'Method Not Allowed' }));
-                                    return [2 /*return*/];
-                                }
-                                _g.label = 1;
-                            case 1:
-                                _g.trys.push([1, 20, , 21]);
-                                chunks = [];
-                                _g.label = 2;
-                            case 2:
-                                _g.trys.push([2, 7, 8, 13]);
-                                _c = true, req_1 = __asyncValues(req);
-                                _g.label = 3;
-                            case 3: return [4 /*yield*/, req_1.next()];
-                            case 4:
-                                if (!(req_1_1 = _g.sent(), _d = req_1_1.done, !_d)) return [3 /*break*/, 6];
-                                _f = req_1_1.value;
-                                _c = false;
-                                chunk = _f;
-                                chunks.push(typeof chunk === 'string' ? Buffer.from(chunk) : chunk);
-                                _g.label = 5;
-                            case 5:
-                                _c = true;
-                                return [3 /*break*/, 3];
-                            case 6: return [3 /*break*/, 13];
-                            case 7:
-                                e_1_1 = _g.sent();
-                                e_1 = { error: e_1_1 };
-                                return [3 /*break*/, 13];
-                            case 8:
-                                _g.trys.push([8, , 11, 12]);
-                                if (!(!_c && !_d && (_e = req_1.return))) return [3 /*break*/, 10];
-                                return [4 /*yield*/, _e.call(req_1)];
-                            case 9:
-                                _g.sent();
-                                _g.label = 10;
-                            case 10: return [3 /*break*/, 12];
-                            case 11:
-                                if (e_1) throw e_1.error;
-                                return [7 /*endfinally*/];
-                            case 12: return [7 /*endfinally*/];
-                            case 13:
-                                body = JSON.parse(Buffer.concat(chunks).toString());
-                                authHeader = req.headers.authorization;
-                                if (!(authHeader === null || authHeader === void 0 ? void 0 : authHeader.startsWith('Bearer '))) {
-                                    res.statusCode = 401;
-                                    res.setHeader('Content-Type', 'application/json');
-                                    res.end(JSON.stringify({ error: 'Token autentikasi tidak ditemukan.' }));
-                                    return [2 /*return*/];
-                                }
-                                return [4 /*yield*/, import('@supabase/supabase-js')];
-                            case 14:
-                                createClient = (_g.sent()).createClient;
-                                callerToken = authHeader.slice(7);
-                                supabaseAnon = createClient(supabaseUrl, supabaseAnonKey, {
-                                    auth: { persistSession: false, autoRefreshToken: false },
-                                });
-                                return [4 /*yield*/, supabaseAnon.auth.getUser(callerToken)];
-                            case 15:
-                                _a = _g.sent(), callerUser = _a.data.user, authErr = _a.error;
-                                if (authErr || !callerUser) {
-                                    res.statusCode = 401;
-                                    res.setHeader('Content-Type', 'application/json');
-                                    res.end(JSON.stringify({ error: 'Token tidak valid.' }));
-                                    return [2 /*return*/];
-                                }
-                                supaAdmin = createClient(supabaseUrl, serviceRoleKey, {
-                                    auth: { persistSession: false, autoRefreshToken: false },
-                                });
-                                return [4 /*yield*/, supaAdmin.from('profiles').select('role').eq('id', callerUser.id).single()];
-                            case 16:
-                                profile = (_g.sent()).data;
-                                callerRole = profile === null || profile === void 0 ? void 0 : profile.role;
-                                if (callerRole !== 'superadmin' && callerRole !== 'admin') {
-                                    res.statusCode = 403;
-                                    res.setHeader('Content-Type', 'application/json');
-                                    res.end(JSON.stringify({ error: 'Tidak memiliki izin.' }));
-                                    return [2 /*return*/];
-                                }
-                                email = body.email, password = body.password, nama = body.nama, nip = body.nip, role = body.role;
-                                if (!email || !password || !nama || !role) {
-                                    res.statusCode = 400;
-                                    res.setHeader('Content-Type', 'application/json');
-                                    res.end(JSON.stringify({ error: 'Field wajib tidak lengkap.' }));
-                                    return [2 /*return*/];
-                                }
-                                if (callerRole === 'admin' && role === 'superadmin') {
-                                    res.statusCode = 403;
-                                    res.setHeader('Content-Type', 'application/json');
-                                    res.end(JSON.stringify({ error: 'Admin tidak dapat membuat Superadmin.' }));
-                                    return [2 /*return*/];
-                                }
-                                return [4 /*yield*/, supaAdmin.auth.admin.createUser({
-                                        email: email,
-                                        password: password,
-                                        email_confirm: true,
-                                        user_metadata: { nama: nama, nip: nip || '', role: role },
-                                    })];
-                            case 17:
-                                _b = _g.sent(), newUser = _b.data, createErr = _b.error;
-                                if (createErr) {
-                                    status_1 = createErr.message.includes('already') ? 409 : 400;
-                                    res.statusCode = status_1;
-                                    res.setHeader('Content-Type', 'application/json');
-                                    res.end(JSON.stringify({ error: createErr.message }));
-                                    return [2 /*return*/];
-                                }
-                                if (!newUser.user) return [3 /*break*/, 19];
-                                return [4 /*yield*/, supaAdmin.from('profiles').update({ role: role, nama: nama, nip: nip || null }).eq('id', newUser.user.id)];
-                            case 18:
-                                _g.sent();
-                                _g.label = 19;
-                            case 19:
-                                res.statusCode = 201;
+            server.middlewares.use('/api/auth/create-user', function (req, res, next) { return __awaiter(_this, void 0, void 0, function () {
+                var chunks, chunk, e_1_1, body, authHeader, createClient, callerToken, supabaseAnon, _a, callerUser, authErr, supaAdmin, profile, callerRole, email, password, nama, nip, role, _b, newUser, createErr, status_1, err_2;
+                var _c, req_1, req_1_1;
+                var _d, e_1, _e, _f;
+                return __generator(this, function (_g) {
+                    switch (_g.label) {
+                        case 0:
+                            if (req.method !== 'POST') {
+                                res.statusCode = 405;
+                                res.setHeader('Content-Type', 'application/json');
+                                res.end(JSON.stringify({ error: 'Method Not Allowed' }));
+                                return [2 /*return*/];
+                            }
+                            if (!supabaseUrl || !serviceRoleKey || !supabaseAnonKey) {
+                                res.statusCode = 503;
                                 res.setHeader('Content-Type', 'application/json');
                                 res.end(JSON.stringify({
-                                    id: newUser.user.id,
-                                    email: newUser.user.email,
-                                    nama: nama,
-                                    nip: nip || null,
-                                    role: role,
+                                    error: 'SUPABASE_SERVICE_ROLE_KEY belum diisi di file .env. Buka dashboard Supabase -> Project Settings -> API, salin kunci service_role, simpan di file .env, lalu restart dev server.',
                                 }));
-                                return [3 /*break*/, 21];
-                            case 20:
-                                err_2 = _g.sent();
-                                next(err_2);
-                                return [3 /*break*/, 21];
-                            case 21: return [2 /*return*/];
-                        }
-                    });
-                }); });
-                // Dev proxy untuk /api/auth/manage-user
-                server.middlewares.use('/api/auth/manage-user', function (req, res, next) { return __awaiter(_this, void 0, void 0, function () {
-                    var chunks, chunk, e_2_1, body, authHeader, createClient, callerToken, supabaseAnon, _a, callerUser, authErr, supaAdmin, profile, callerRole, action, userId, nama, nip, role, newPassword, targetProfile, targetRole, resetErr, delErr, err_3;
-                    var _b, req_2, req_2_1;
-                    var _c, e_2, _d, _e;
-                    return __generator(this, function (_f) {
-                        switch (_f.label) {
-                            case 0:
-                                if (req.method !== 'POST') {
-                                    res.statusCode = 405;
-                                    res.setHeader('Content-Type', 'application/json');
-                                    res.end(JSON.stringify({ error: 'Method Not Allowed' }));
-                                    return [2 /*return*/];
-                                }
-                                _f.label = 1;
-                            case 1:
-                                _f.trys.push([1, 25, , 26]);
-                                chunks = [];
-                                _f.label = 2;
-                            case 2:
-                                _f.trys.push([2, 7, 8, 13]);
-                                _b = true, req_2 = __asyncValues(req);
-                                _f.label = 3;
-                            case 3: return [4 /*yield*/, req_2.next()];
-                            case 4:
-                                if (!(req_2_1 = _f.sent(), _c = req_2_1.done, !_c)) return [3 /*break*/, 6];
-                                _e = req_2_1.value;
-                                _b = false;
-                                chunk = _e;
-                                chunks.push(typeof chunk === 'string' ? Buffer.from(chunk) : chunk);
-                                _f.label = 5;
-                            case 5:
-                                _b = true;
-                                return [3 /*break*/, 3];
-                            case 6: return [3 /*break*/, 13];
-                            case 7:
-                                e_2_1 = _f.sent();
-                                e_2 = { error: e_2_1 };
-                                return [3 /*break*/, 13];
-                            case 8:
-                                _f.trys.push([8, , 11, 12]);
-                                if (!(!_b && !_c && (_d = req_2.return))) return [3 /*break*/, 10];
-                                return [4 /*yield*/, _d.call(req_2)];
-                            case 9:
-                                _f.sent();
-                                _f.label = 10;
-                            case 10: return [3 /*break*/, 12];
-                            case 11:
-                                if (e_2) throw e_2.error;
-                                return [7 /*endfinally*/];
-                            case 12: return [7 /*endfinally*/];
-                            case 13:
-                                body = JSON.parse(Buffer.concat(chunks).toString());
-                                authHeader = req.headers.authorization;
-                                if (!(authHeader === null || authHeader === void 0 ? void 0 : authHeader.startsWith('Bearer '))) {
-                                    res.statusCode = 401;
-                                    res.setHeader('Content-Type', 'application/json');
-                                    res.end(JSON.stringify({ error: 'Token autentikasi tidak ditemukan.' }));
-                                    return [2 /*return*/];
-                                }
-                                return [4 /*yield*/, import('@supabase/supabase-js')];
-                            case 14:
-                                createClient = (_f.sent()).createClient;
-                                callerToken = authHeader.slice(7);
-                                supabaseAnon = createClient(supabaseUrl, supabaseAnonKey, {
-                                    auth: { persistSession: false, autoRefreshToken: false },
-                                });
-                                return [4 /*yield*/, supabaseAnon.auth.getUser(callerToken)];
-                            case 15:
-                                _a = _f.sent(), callerUser = _a.data.user, authErr = _a.error;
-                                if (authErr || !callerUser) {
-                                    res.statusCode = 401;
-                                    res.setHeader('Content-Type', 'application/json');
-                                    res.end(JSON.stringify({ error: 'Token tidak valid.' }));
-                                    return [2 /*return*/];
-                                }
-                                supaAdmin = createClient(supabaseUrl, serviceRoleKey, {
-                                    auth: { persistSession: false, autoRefreshToken: false },
-                                });
-                                return [4 /*yield*/, supaAdmin.from('profiles').select('role').eq('id', callerUser.id).single()];
-                            case 16:
-                                profile = (_f.sent()).data;
-                                callerRole = profile === null || profile === void 0 ? void 0 : profile.role;
-                                if (callerRole !== 'superadmin' && callerRole !== 'admin') {
-                                    res.statusCode = 403;
-                                    res.setHeader('Content-Type', 'application/json');
-                                    res.end(JSON.stringify({ error: 'Tidak memiliki izin.' }));
-                                    return [2 /*return*/];
-                                }
-                                action = body.action, userId = body.userId, nama = body.nama, nip = body.nip, role = body.role, newPassword = body.newPassword;
-                                if (!action || !userId) {
-                                    res.statusCode = 400;
-                                    res.setHeader('Content-Type', 'application/json');
-                                    res.end(JSON.stringify({ error: 'Parameter tidak lengkap.' }));
-                                    return [2 /*return*/];
-                                }
-                                return [4 /*yield*/, supaAdmin.from('profiles').select('role').eq('id', userId).single()];
-                            case 17:
-                                targetProfile = (_f.sent()).data;
-                                targetRole = targetProfile === null || targetProfile === void 0 ? void 0 : targetProfile.role;
-                                if (callerRole === 'admin' && targetRole === 'superadmin') {
-                                    res.statusCode = 403;
-                                    res.setHeader('Content-Type', 'application/json');
-                                    res.end(JSON.stringify({ error: 'Admin tidak dapat mengelola Superadmin.' }));
-                                    return [2 /*return*/];
-                                }
-                                if (!(action === 'update')) return [3 /*break*/, 20];
-                                if (callerRole === 'admin' && role === 'superadmin') {
-                                    res.statusCode = 403;
-                                    res.setHeader('Content-Type', 'application/json');
-                                    res.end(JSON.stringify({ error: 'Admin tidak dapat menetapkan role Superadmin.' }));
-                                    return [2 /*return*/];
-                                }
-                                return [4 /*yield*/, supaAdmin.from('profiles').update({
-                                        nama: nama === null || nama === void 0 ? void 0 : nama.trim(),
-                                        nip: (nip === null || nip === void 0 ? void 0 : nip.trim()) || null,
-                                        role: role,
-                                        updated_at: new Date().toISOString(),
-                                    }).eq('id', userId)];
-                            case 18:
-                                _f.sent();
-                                return [4 /*yield*/, supaAdmin.auth.admin.updateUserById(userId, {
-                                        user_metadata: { nama: nama === null || nama === void 0 ? void 0 : nama.trim(), nip: (nip === null || nip === void 0 ? void 0 : nip.trim()) || '', role: role },
-                                    })];
-                            case 19:
-                                _f.sent();
-                                res.statusCode = 200;
-                                res.setHeader('Content-Type', 'application/json');
-                                res.end(JSON.stringify({ success: true }));
                                 return [2 /*return*/];
-                            case 20:
-                                if (!(action === 'reset-password')) return [3 /*break*/, 22];
-                                if (!newPassword || newPassword.length < 6) {
-                                    res.statusCode = 400;
-                                    res.setHeader('Content-Type', 'application/json');
-                                    res.end(JSON.stringify({ error: 'Password minimal 6 karakter.' }));
-                                    return [2 /*return*/];
-                                }
-                                return [4 /*yield*/, supaAdmin.auth.admin.updateUserById(userId, { password: newPassword })];
-                            case 21:
-                                resetErr = (_f.sent()).error;
-                                if (resetErr) {
-                                    res.statusCode = 400;
-                                    res.setHeader('Content-Type', 'application/json');
-                                    res.end(JSON.stringify({ error: resetErr.message }));
-                                    return [2 /*return*/];
-                                }
-                                res.statusCode = 200;
+                            }
+                            _g.label = 1;
+                        case 1:
+                            _g.trys.push([1, 20, , 21]);
+                            chunks = [];
+                            _g.label = 2;
+                        case 2:
+                            _g.trys.push([2, 7, 8, 13]);
+                            _c = true, req_1 = __asyncValues(req);
+                            _g.label = 3;
+                        case 3: return [4 /*yield*/, req_1.next()];
+                        case 4:
+                            if (!(req_1_1 = _g.sent(), _d = req_1_1.done, !_d)) return [3 /*break*/, 6];
+                            _f = req_1_1.value;
+                            _c = false;
+                            chunk = _f;
+                            chunks.push(typeof chunk === 'string' ? Buffer.from(chunk) : chunk);
+                            _g.label = 5;
+                        case 5:
+                            _c = true;
+                            return [3 /*break*/, 3];
+                        case 6: return [3 /*break*/, 13];
+                        case 7:
+                            e_1_1 = _g.sent();
+                            e_1 = { error: e_1_1 };
+                            return [3 /*break*/, 13];
+                        case 8:
+                            _g.trys.push([8, , 11, 12]);
+                            if (!(!_c && !_d && (_e = req_1.return))) return [3 /*break*/, 10];
+                            return [4 /*yield*/, _e.call(req_1)];
+                        case 9:
+                            _g.sent();
+                            _g.label = 10;
+                        case 10: return [3 /*break*/, 12];
+                        case 11:
+                            if (e_1) throw e_1.error;
+                            return [7 /*endfinally*/];
+                        case 12: return [7 /*endfinally*/];
+                        case 13:
+                            body = JSON.parse(Buffer.concat(chunks).toString());
+                            authHeader = req.headers.authorization;
+                            if (!(authHeader === null || authHeader === void 0 ? void 0 : authHeader.startsWith('Bearer '))) {
+                                res.statusCode = 401;
                                 res.setHeader('Content-Type', 'application/json');
-                                res.end(JSON.stringify({ success: true }));
+                                res.end(JSON.stringify({ error: 'Token autentikasi tidak ditemukan.' }));
                                 return [2 /*return*/];
-                            case 22:
-                                if (!(action === 'delete')) return [3 /*break*/, 24];
-                                if (userId === callerUser.id) {
-                                    res.statusCode = 400;
-                                    res.setHeader('Content-Type', 'application/json');
-                                    res.end(JSON.stringify({ error: 'Tidak dapat menghapus akun sendiri.' }));
-                                    return [2 /*return*/];
-                                }
-                                return [4 /*yield*/, supaAdmin.auth.admin.deleteUser(userId)];
-                            case 23:
-                                delErr = (_f.sent()).error;
-                                if (delErr) {
-                                    res.statusCode = 400;
-                                    res.setHeader('Content-Type', 'application/json');
-                                    res.end(JSON.stringify({ error: delErr.message }));
-                                    return [2 /*return*/];
-                                }
-                                res.statusCode = 200;
+                            }
+                            return [4 /*yield*/, import('@supabase/supabase-js')];
+                        case 14:
+                            createClient = (_g.sent()).createClient;
+                            callerToken = authHeader.slice(7);
+                            supabaseAnon = createClient(supabaseUrl, supabaseAnonKey, {
+                                auth: { persistSession: false, autoRefreshToken: false },
+                            });
+                            return [4 /*yield*/, supabaseAnon.auth.getUser(callerToken)];
+                        case 15:
+                            _a = _g.sent(), callerUser = _a.data.user, authErr = _a.error;
+                            if (authErr || !callerUser) {
+                                res.statusCode = 401;
                                 res.setHeader('Content-Type', 'application/json');
-                                res.end(JSON.stringify({ success: true }));
+                                res.end(JSON.stringify({ error: 'Token tidak valid.' }));
                                 return [2 /*return*/];
-                            case 24:
+                            }
+                            supaAdmin = createClient(supabaseUrl, serviceRoleKey, {
+                                auth: { persistSession: false, autoRefreshToken: false },
+                            });
+                            return [4 /*yield*/, supaAdmin.from('profiles').select('role').eq('id', callerUser.id).single()];
+                        case 16:
+                            profile = (_g.sent()).data;
+                            callerRole = profile === null || profile === void 0 ? void 0 : profile.role;
+                            if (callerRole !== 'superadmin' && callerRole !== 'admin') {
+                                res.statusCode = 403;
+                                res.setHeader('Content-Type', 'application/json');
+                                res.end(JSON.stringify({ error: 'Tidak memiliki izin.' }));
+                                return [2 /*return*/];
+                            }
+                            email = body.email, password = body.password, nama = body.nama, nip = body.nip, role = body.role;
+                            if (!email || !password || !nama || !role) {
                                 res.statusCode = 400;
                                 res.setHeader('Content-Type', 'application/json');
-                                res.end(JSON.stringify({ error: 'Aksi tidak valid.' }));
-                                return [3 /*break*/, 26];
-                            case 25:
-                                err_3 = _f.sent();
-                                next(err_3);
-                                return [3 /*break*/, 26];
-                            case 26: return [2 /*return*/];
-                        }
-                    });
-                }); });
-            }
+                                res.end(JSON.stringify({ error: 'Field wajib tidak lengkap.' }));
+                                return [2 /*return*/];
+                            }
+                            if (callerRole === 'admin' && role === 'superadmin') {
+                                res.statusCode = 403;
+                                res.setHeader('Content-Type', 'application/json');
+                                res.end(JSON.stringify({ error: 'Admin tidak dapat membuat Superadmin.' }));
+                                return [2 /*return*/];
+                            }
+                            return [4 /*yield*/, supaAdmin.auth.admin.createUser({
+                                    email: email,
+                                    password: password,
+                                    email_confirm: true,
+                                    user_metadata: { nama: nama, nip: nip || '', role: role },
+                                })];
+                        case 17:
+                            _b = _g.sent(), newUser = _b.data, createErr = _b.error;
+                            if (createErr) {
+                                status_1 = createErr.message.includes('already') ? 409 : 400;
+                                res.statusCode = status_1;
+                                res.setHeader('Content-Type', 'application/json');
+                                res.end(JSON.stringify({ error: createErr.message }));
+                                return [2 /*return*/];
+                            }
+                            if (!newUser.user) return [3 /*break*/, 19];
+                            return [4 /*yield*/, supaAdmin.from('profiles').update({ role: role, nama: nama, nip: nip || null }).eq('id', newUser.user.id)];
+                        case 18:
+                            _g.sent();
+                            _g.label = 19;
+                        case 19:
+                            res.statusCode = 201;
+                            res.setHeader('Content-Type', 'application/json');
+                            res.end(JSON.stringify({
+                                id: newUser.user.id,
+                                email: newUser.user.email,
+                                nama: nama,
+                                nip: nip || null,
+                                role: role,
+                            }));
+                            return [3 /*break*/, 21];
+                        case 20:
+                            err_2 = _g.sent();
+                            next(err_2);
+                            return [3 /*break*/, 21];
+                        case 21: return [2 /*return*/];
+                    }
+                });
+            }); });
+            // Dev proxy untuk /api/auth/manage-user
+            server.middlewares.use('/api/auth/manage-user', function (req, res, next) { return __awaiter(_this, void 0, void 0, function () {
+                var chunks, chunk, e_2_1, body, authHeader, createClient, callerToken, supabaseAnon, _a, callerUser, authErr, supaAdmin, profile, callerRole, action, userId, nama, nip, role, newPassword, targetProfile, targetRole, resetErr, delErr, err_3;
+                var _b, req_2, req_2_1;
+                var _c, e_2, _d, _e;
+                return __generator(this, function (_f) {
+                    switch (_f.label) {
+                        case 0:
+                            if (req.method !== 'POST') {
+                                res.statusCode = 405;
+                                res.setHeader('Content-Type', 'application/json');
+                                res.end(JSON.stringify({ error: 'Method Not Allowed' }));
+                                return [2 /*return*/];
+                            }
+                            if (!supabaseUrl || !serviceRoleKey || !supabaseAnonKey) {
+                                res.statusCode = 503;
+                                res.setHeader('Content-Type', 'application/json');
+                                res.end(JSON.stringify({
+                                    error: 'SUPABASE_SERVICE_ROLE_KEY belum diisi di file .env. Buka dashboard Supabase -> Project Settings -> API, salin kunci service_role, simpan di file .env, lalu restart dev server.',
+                                }));
+                                return [2 /*return*/];
+                            }
+                            _f.label = 1;
+                        case 1:
+                            _f.trys.push([1, 25, , 26]);
+                            chunks = [];
+                            _f.label = 2;
+                        case 2:
+                            _f.trys.push([2, 7, 8, 13]);
+                            _b = true, req_2 = __asyncValues(req);
+                            _f.label = 3;
+                        case 3: return [4 /*yield*/, req_2.next()];
+                        case 4:
+                            if (!(req_2_1 = _f.sent(), _c = req_2_1.done, !_c)) return [3 /*break*/, 6];
+                            _e = req_2_1.value;
+                            _b = false;
+                            chunk = _e;
+                            chunks.push(typeof chunk === 'string' ? Buffer.from(chunk) : chunk);
+                            _f.label = 5;
+                        case 5:
+                            _b = true;
+                            return [3 /*break*/, 3];
+                        case 6: return [3 /*break*/, 13];
+                        case 7:
+                            e_2_1 = _f.sent();
+                            e_2 = { error: e_2_1 };
+                            return [3 /*break*/, 13];
+                        case 8:
+                            _f.trys.push([8, , 11, 12]);
+                            if (!(!_b && !_c && (_d = req_2.return))) return [3 /*break*/, 10];
+                            return [4 /*yield*/, _d.call(req_2)];
+                        case 9:
+                            _f.sent();
+                            _f.label = 10;
+                        case 10: return [3 /*break*/, 12];
+                        case 11:
+                            if (e_2) throw e_2.error;
+                            return [7 /*endfinally*/];
+                        case 12: return [7 /*endfinally*/];
+                        case 13:
+                            body = JSON.parse(Buffer.concat(chunks).toString());
+                            authHeader = req.headers.authorization;
+                            if (!(authHeader === null || authHeader === void 0 ? void 0 : authHeader.startsWith('Bearer '))) {
+                                res.statusCode = 401;
+                                res.setHeader('Content-Type', 'application/json');
+                                res.end(JSON.stringify({ error: 'Token autentikasi tidak ditemukan.' }));
+                                return [2 /*return*/];
+                            }
+                            return [4 /*yield*/, import('@supabase/supabase-js')];
+                        case 14:
+                            createClient = (_f.sent()).createClient;
+                            callerToken = authHeader.slice(7);
+                            supabaseAnon = createClient(supabaseUrl, supabaseAnonKey, {
+                                auth: { persistSession: false, autoRefreshToken: false },
+                            });
+                            return [4 /*yield*/, supabaseAnon.auth.getUser(callerToken)];
+                        case 15:
+                            _a = _f.sent(), callerUser = _a.data.user, authErr = _a.error;
+                            if (authErr || !callerUser) {
+                                res.statusCode = 401;
+                                res.setHeader('Content-Type', 'application/json');
+                                res.end(JSON.stringify({ error: 'Token tidak valid.' }));
+                                return [2 /*return*/];
+                            }
+                            supaAdmin = createClient(supabaseUrl, serviceRoleKey, {
+                                auth: { persistSession: false, autoRefreshToken: false },
+                            });
+                            return [4 /*yield*/, supaAdmin.from('profiles').select('role').eq('id', callerUser.id).single()];
+                        case 16:
+                            profile = (_f.sent()).data;
+                            callerRole = profile === null || profile === void 0 ? void 0 : profile.role;
+                            if (callerRole !== 'superadmin' && callerRole !== 'admin') {
+                                res.statusCode = 403;
+                                res.setHeader('Content-Type', 'application/json');
+                                res.end(JSON.stringify({ error: 'Tidak memiliki izin.' }));
+                                return [2 /*return*/];
+                            }
+                            action = body.action, userId = body.userId, nama = body.nama, nip = body.nip, role = body.role, newPassword = body.newPassword;
+                            if (!action || !userId) {
+                                res.statusCode = 400;
+                                res.setHeader('Content-Type', 'application/json');
+                                res.end(JSON.stringify({ error: 'Parameter tidak lengkap.' }));
+                                return [2 /*return*/];
+                            }
+                            return [4 /*yield*/, supaAdmin.from('profiles').select('role').eq('id', userId).single()];
+                        case 17:
+                            targetProfile = (_f.sent()).data;
+                            targetRole = targetProfile === null || targetProfile === void 0 ? void 0 : targetProfile.role;
+                            if (callerRole === 'admin' && targetRole === 'superadmin') {
+                                res.statusCode = 403;
+                                res.setHeader('Content-Type', 'application/json');
+                                res.end(JSON.stringify({ error: 'Admin tidak dapat mengelola Superadmin.' }));
+                                return [2 /*return*/];
+                            }
+                            if (!(action === 'update')) return [3 /*break*/, 20];
+                            if (callerRole === 'admin' && role === 'superadmin') {
+                                res.statusCode = 403;
+                                res.setHeader('Content-Type', 'application/json');
+                                res.end(JSON.stringify({ error: 'Admin tidak dapat menetapkan role Superadmin.' }));
+                                return [2 /*return*/];
+                            }
+                            return [4 /*yield*/, supaAdmin.from('profiles').update({
+                                    nama: nama === null || nama === void 0 ? void 0 : nama.trim(),
+                                    nip: (nip === null || nip === void 0 ? void 0 : nip.trim()) || null,
+                                    role: role,
+                                    updated_at: new Date().toISOString(),
+                                }).eq('id', userId)];
+                        case 18:
+                            _f.sent();
+                            return [4 /*yield*/, supaAdmin.auth.admin.updateUserById(userId, {
+                                    user_metadata: { nama: nama === null || nama === void 0 ? void 0 : nama.trim(), nip: (nip === null || nip === void 0 ? void 0 : nip.trim()) || '', role: role },
+                                })];
+                        case 19:
+                            _f.sent();
+                            res.statusCode = 200;
+                            res.setHeader('Content-Type', 'application/json');
+                            res.end(JSON.stringify({ success: true }));
+                            return [2 /*return*/];
+                        case 20:
+                            if (!(action === 'reset-password')) return [3 /*break*/, 22];
+                            if (!newPassword || newPassword.length < 6) {
+                                res.statusCode = 400;
+                                res.setHeader('Content-Type', 'application/json');
+                                res.end(JSON.stringify({ error: 'Password minimal 6 karakter.' }));
+                                return [2 /*return*/];
+                            }
+                            return [4 /*yield*/, supaAdmin.auth.admin.updateUserById(userId, { password: newPassword })];
+                        case 21:
+                            resetErr = (_f.sent()).error;
+                            if (resetErr) {
+                                res.statusCode = 400;
+                                res.setHeader('Content-Type', 'application/json');
+                                res.end(JSON.stringify({ error: resetErr.message }));
+                                return [2 /*return*/];
+                            }
+                            res.statusCode = 200;
+                            res.setHeader('Content-Type', 'application/json');
+                            res.end(JSON.stringify({ success: true }));
+                            return [2 /*return*/];
+                        case 22:
+                            if (!(action === 'delete')) return [3 /*break*/, 24];
+                            if (userId === callerUser.id) {
+                                res.statusCode = 400;
+                                res.setHeader('Content-Type', 'application/json');
+                                res.end(JSON.stringify({ error: 'Tidak dapat menghapus akun sendiri.' }));
+                                return [2 /*return*/];
+                            }
+                            return [4 /*yield*/, supaAdmin.auth.admin.deleteUser(userId)];
+                        case 23:
+                            delErr = (_f.sent()).error;
+                            if (delErr) {
+                                res.statusCode = 400;
+                                res.setHeader('Content-Type', 'application/json');
+                                res.end(JSON.stringify({ error: delErr.message }));
+                                return [2 /*return*/];
+                            }
+                            res.statusCode = 200;
+                            res.setHeader('Content-Type', 'application/json');
+                            res.end(JSON.stringify({ success: true }));
+                            return [2 /*return*/];
+                        case 24:
+                            res.statusCode = 400;
+                            res.setHeader('Content-Type', 'application/json');
+                            res.end(JSON.stringify({ error: 'Aksi tidak valid.' }));
+                            return [3 /*break*/, 26];
+                        case 25:
+                            err_3 = _f.sent();
+                            next(err_3);
+                            return [3 /*break*/, 26];
+                        case 26: return [2 /*return*/];
+                    }
+                });
+            }); });
         },
     };
     return {

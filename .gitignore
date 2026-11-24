@@ -5,6 +5,8 @@ node_modules
 dist
 dist-ssr
 *.local
+api/**/*.js
+api/**/*.d.ts
 
 # env / credentials - JANGAN pernah commit
 .env
