@@ -12,7 +12,7 @@ interface FieldErrors {
 }
 
 export default function Login() {
-  const { isAuthenticated, isLoading, login } = useAuth()
+  const { isAuthenticated, isLoading, login, isConfigured } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
 
@@ -158,6 +158,21 @@ export default function Login() {
             </Button>
           </form>
         </div>
+
+        {!isConfigured && (
+          <div className="mt-4 rounded-lg border border-amber-500/25 bg-amber-500/10 p-3 text-center text-xs text-amber-500">
+            <p className="font-semibold">Mode Simulasi (Mock)</p>
+            <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground">
+              Supabase belum dikonfigurasi di <code className="text-foreground">.env</code>. Akun tes per role:
+              <br />
+              • <b>superadmin</b> (pass: <code className="text-foreground">admin123</code>)
+              <br />
+              • <b>admin</b> (pass: <code className="text-foreground">admin123</code>)
+              <br />
+              • <b>198001012005011001</b> (pass: <code className="text-foreground">password123</code>)
+            </p>
+          </div>
+        )}
 
         <p className="mt-6 text-center text-xs text-muted-foreground">
           Akses terbatas untuk pegawai PPSDMPU. Hubungi petugas jika mengalami kendala login.

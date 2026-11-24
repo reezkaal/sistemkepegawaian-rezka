@@ -102,10 +102,10 @@ export default function Employees() {
             onClick={() => refetch()}
             disabled={isLoading}
             className="inline-flex h-9 items-center gap-2 rounded-lg border border-border bg-card px-3.5 text-xs font-semibold text-foreground shadow-sm transition-all hover:bg-secondary hover:text-foreground active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            aria-label="Segarkan data pegawai"
+            aria-label="Refresh data pegawai"
           >
             <RotateCw className={cn('h-3.5 w-3.5 text-muted-foreground', isLoading && 'animate-spin')} />
-            <span>Segarkan</span>
+            <span>Refresh</span>
           </button>
         </div>
       </div>

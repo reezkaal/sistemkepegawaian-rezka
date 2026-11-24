@@ -14,7 +14,7 @@
  * Aturan: field kosong/undefined → "-". Tidak ada data yang dikarang.
  */
 
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, Navigate } from 'react-router-dom'
 import { ArrowLeft, User } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -28,15 +28,20 @@ import {
 } from '@/components/employee/EmployeeDetailSections'
 import { useEmployeeDetail } from '@/hooks/useEmployeeDetail'
 import { useLeaveSummary, TAHUN_BERJALAN } from '@/hooks/useLeaveSummary'
+import { useAuth } from '@/hooks/useAuth'
 
 // ─── BackButton ───────────────────────────────────────────────────────────────
 
 function BackButton() {
   const navigate = useNavigate()
+  const { role } = useAuth()
+  const backTo = role === 'user' ? '/dashboard' : '/pegawai'
+  const label = role === 'user' ? 'Kembali ke Dashboard' : 'Kembali ke Daftar Pegawai'
+
   return (
-    <Button type="button" variant="outline" onClick={() => navigate('/pegawai')}>
+    <Button type="button" variant="outline" onClick={() => navigate(backTo)}>
       <ArrowLeft className="h-4 w-4" aria-hidden="true" />
-      Kembali ke Daftar Pegawai
+      {label}
     </Button>
   )
 }
@@ -66,8 +71,14 @@ function LoadingSkeleton() {
 
 export default function EmployeeDetail() {
   const { nip } = useParams<{ nip: string }>()
+  const { user, role } = useAuth()
   const { employee, isLoading, error, notFound } = useEmployeeDetail(nip)
   const leaveSummary = useLeaveSummary(nip)
+
+  // Pengguna biasa (role: user) hanya dapat melihat detail dirinya sendiri
+  if (role === 'user' && user?.nip && nip && user.nip !== nip) {
+    return <Navigate to={`/pegawai/${user.nip}`} replace />
+  }
 
   if (isLoading) {
     return <LoadingSkeleton />

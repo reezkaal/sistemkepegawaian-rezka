@@ -11,16 +11,42 @@ import { cn } from '@/lib/utils'
 // hanya <main> yang overflow-y-auto sehingga scroll hanya terjadi di konten utama.
 export default function AppShell() {
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
+  const [isCollapsed, setIsCollapsed] = useState(() => {
+    try {
+      return localStorage.getItem('simpeg_sidebar_collapsed') === 'true'
+    } catch {
+      return false
+    }
+  })
+
+  function toggleDesktopSidebar() {
+    setIsCollapsed((prev) => {
+      const next = !prev
+      try {
+        localStorage.setItem('simpeg_sidebar_collapsed', String(next))
+      } catch {}
+      return next
+    })
+  }
 
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-background">
       {/* Header — tidak scroll, selalu di atas */}
-      <Header onToggleMobileNav={() => setMobileNavOpen((v) => !v)} />
+      <Header
+        onToggleMobileNav={() => setMobileNavOpen((v) => !v)}
+        onToggleDesktopSidebar={toggleDesktopSidebar}
+        isSidebarCollapsed={isCollapsed}
+      />
 
       <div className="flex flex-1 overflow-hidden">
         {/* Sidebar desktop — sticky, hanya scroll sendiri jika kontennya panjang */}
-        <aside className="hidden w-64 shrink-0 overflow-y-auto border-r border-border bg-card lg:block">
-          <Sidebar />
+        <aside
+          className={cn(
+            'hidden shrink-0 overflow-y-auto border-r border-border bg-card transition-[width] duration-300 ease-in-out lg:block',
+            isCollapsed ? 'w-16' : 'w-64',
+          )}
+        >
+          <Sidebar collapsed={isCollapsed} />
         </aside>
 
         {/* Sidebar mobile (overlay) */}

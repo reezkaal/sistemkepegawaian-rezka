@@ -1,24 +1,35 @@
-/**
- * MOCK / DEMO CREDENTIALS — BUKAN CREDENTIAL PRODUCTION.
- *
- * File ini sengaja berisi akun contoh untuk keperluan prototype
- * Checkpoint 2 saja (lihat docs/authentication.md). Ini BUKAN mekanisme
- * keamanan sesungguhnya dan TIDAK BOLEH dipakai apa adanya di produksi.
- * Saat integrasi backend/Apps Script (Checkpoint 5+), mekanisme ini harus
- * diganti dengan validasi sisi server yang sesungguhnya.
- *
- * Silakan tambah/ubah akun demo ini sesuai kebutuhan testing internal.
- */
+import type { UserRole } from '@/types/auth'
 
 export interface MockUser {
   username: string
   password: string
   displayName: string
+  role: UserRole
+  nip?: string
 }
 
 export const MOCK_USERS: MockUser[] = [
-  { username: 'admin', password: 'admin123', displayName: 'Admin PPSDMPU (Demo)' },
-  { username: '198001012005011001', password: 'password123', displayName: 'Pegawai Contoh 001' },
+  {
+    username: 'superadmin',
+    password: 'admin123',
+    displayName: 'Super Administrator',
+    role: 'superadmin',
+    nip: '197501012000031001',
+  },
+  {
+    username: 'admin',
+    password: 'admin123',
+    displayName: 'Admin PPSDMPU (Demo)',
+    role: 'admin',
+    nip: '198501012010011002',
+  },
+  {
+    username: '198001012005011001',
+    password: 'password123',
+    displayName: 'Pegawai Contoh 001',
+    role: 'user',
+    nip: '198001012005011001',
+  },
 ]
 
 export function validateMockCredentials(
