@@ -13,7 +13,10 @@ api/**/*.d.ts
 .env.*
 !.env.example
 *credential*
-*password*
+*password*.txt
+*password*.json
+*password*.csv
+!src/**/*
 
 # data asli - JANGAN pernah commit (§ 4, § 19, § 23 requirement)
 *.xlsx

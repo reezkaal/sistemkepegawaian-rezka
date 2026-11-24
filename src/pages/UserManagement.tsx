@@ -255,7 +255,7 @@ export default function UserManagement() {
       <EditUserDialog
         user={editingUser}
         open={Boolean(editingUser)}
-        onOpenChange={(open) => !open && setEditingUser(null)}
+        onOpenChange={(open: boolean) => !open && setEditingUser(null)}
         onSuccess={fetchUsers}
       />
 
@@ -263,7 +263,7 @@ export default function UserManagement() {
       <ResetPasswordDialog
         user={resettingUser}
         open={Boolean(resettingUser)}
-        onOpenChange={(open) => !open && setResettingUser(null)}
+        onOpenChange={(open: boolean) => !open && setResettingUser(null)}
         onSuccess={fetchUsers}
       />
 
@@ -271,7 +271,7 @@ export default function UserManagement() {
       <DeleteUserDialog
         user={deletingUser}
         open={Boolean(deletingUser)}
-        onOpenChange={(open) => !open && setDeletingUser(null)}
+        onOpenChange={(open: boolean) => !open && setDeletingUser(null)}
         onSuccess={fetchUsers}
       />
     </div>
