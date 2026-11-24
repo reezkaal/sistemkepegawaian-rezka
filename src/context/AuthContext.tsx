@@ -126,46 +126,70 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (isSupabaseConfigured) {
         try {
           const input = usernameOrEmailOrNip.trim()
-          // Jika pengguna memasukkan NIP/username tanpa '@', coba variasikan dengan email domain internal
-          const emailTarget = input.includes('@') ? input : `${input}@ppsdmpu.internal`
+          const cleanPassword = password.trim()
 
-          const { data, error } = await supabase.auth.signInWithPassword({
-            email: emailTarget,
-            password,
-          })
+          // Siapkan daftar target email yang dicoba secara cerdas
+          const candidateEmails: string[] = []
 
-          if (error) {
-            // Coba sekali lagi dengan domain standar kemenhub jika gagal
-            if (!input.includes('@')) {
-              const { data: retryData, error: retryError } = await supabase.auth.signInWithPassword({
-                email: `${input}@dephub.go.id`,
+          if (input.includes('@')) {
+            candidateEmails.push(input.toLowerCase())
+          } else {
+            const lowerInput = input.toLowerCase()
+
+            // 1. Pemetaan NIP khusus
+            if (lowerInput === '12345') {
+              candidateEmails.push('admin@ppsdmpu.go.id')
+            } else if (lowerInput === '123456789012345678') {
+              candidateEmails.push('superadmin@ppsdmpu.go.id')
+            }
+
+            // 2. Domain resmi PPSDMPU (.go.id)
+            candidateEmails.push(`${lowerInput}@ppsdmpu.go.id`)
+
+            // 3. Domain internal & Kemenhub
+            candidateEmails.push(`${lowerInput}@ppsdmpu.internal`)
+            candidateEmails.push(`${lowerInput}@dephub.go.id`)
+          }
+
+          let lastErrorMessage = 'Username/NIP atau password salah.'
+
+          for (const emailTarget of candidateEmails) {
+            // Coba login dengan cleanPassword terlebih dahulu
+            let { data, error } = await supabase.auth.signInWithPassword({
+              email: emailTarget,
+              password: cleanPassword,
+            })
+
+            // Jika gagal dan password asli berbeda karena whitespace, coba password asli
+            if (error && cleanPassword !== password) {
+              const retryRaw = await supabase.auth.signInWithPassword({
+                email: emailTarget,
                 password,
               })
-
-              if (!retryError && retryData.user) {
-                await loadSupabaseUserProfile(
-                  retryData.user.id,
-                  retryData.user.email ?? '',
-                  retryData.user.user_metadata,
-                )
-                return { success: true }
+              if (!retryRaw.error) {
+                data = retryRaw.data
+                error = null
               }
             }
 
-            return {
-              success: false,
-              message: error.message === 'Invalid login credentials'
-                ? 'Username/NIP atau password salah.'
-                : error.message,
+            if (!error && data.user) {
+              await loadSupabaseUserProfile(
+                data.user.id,
+                data.user.email ?? emailTarget,
+                data.user.user_metadata,
+              )
+              return { success: true }
+            }
+
+            if (error && error.message !== 'Invalid login credentials') {
+              lastErrorMessage = error.message
             }
           }
 
-          if (data.user) {
-            await loadSupabaseUserProfile(data.user.id, data.user.email ?? '', data.user.user_metadata)
-            return { success: true }
+          return {
+            success: false,
+            message: lastErrorMessage,
           }
-
-          return { success: false, message: 'Autentikasi gagal.' }
         } catch (err: unknown) {
           const msg = err instanceof Error ? err.message : 'Terjadi kesalahan jaringan.'
           return { success: false, message: msg }

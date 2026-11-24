@@ -94,13 +94,13 @@ export default function Login() {
             )}
 
             <div className="space-y-2">
-              <Label htmlFor="username">Username / NIP</Label>
+              <Label htmlFor="username">Email / Username / NIP</Label>
               <Input
                 id="username"
                 name="username"
                 type="text"
                 autoComplete="username"
-                placeholder="Masukkan username atau NIP"
+                placeholder="Masukkan email, username, atau NIP"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 aria-invalid={Boolean(fieldErrors.username)}
