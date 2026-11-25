@@ -32,6 +32,7 @@ interface ProfileDialogProps {
 
 export default function ProfileDialog({ open, onOpenChange }: ProfileDialogProps) {
   const { user } = useAuth()
+  const [currentPassword, setCurrentPassword] = useState('')
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -41,6 +42,7 @@ export default function ProfileDialog({ open, onOpenChange }: ProfileDialogProps
 
   function handleOpenChange(nextOpen: boolean) {
     if (!nextOpen) {
+      setCurrentPassword('')
       setNewPassword('')
       setConfirmPassword('')
       setShowPassword(false)
@@ -55,6 +57,11 @@ export default function ProfileDialog({ open, onOpenChange }: ProfileDialogProps
     setError(null)
     setSuccess(false)
 
+    if (!currentPassword) {
+      setError('Password lama wajib diisi.')
+      return
+    }
+
     if (newPassword.length < 6) {
       setError('Password baru minimal 6 karakter.')
       return
@@ -67,8 +74,9 @@ export default function ProfileDialog({ open, onOpenChange }: ProfileDialogProps
 
     setIsSubmitting(true)
     try {
-      await changeOwnPassword(newPassword)
+      await changeOwnPassword(currentPassword, newPassword)
       setSuccess(true)
+      setCurrentPassword('')
       setNewPassword('')
       setConfirmPassword('')
     } catch (err: unknown) {
@@ -152,6 +160,19 @@ export default function ProfileDialog({ open, onOpenChange }: ProfileDialogProps
 
           <form onSubmit={handlePasswordSubmit} className="space-y-3">
             <div className="space-y-1">
+              <Label htmlFor="profile-current-pass" className="text-xs">Password Lama</Label>
+              <Input
+                id="profile-current-pass"
+                type={showPassword ? 'text' : 'password'}
+                placeholder="Masukkan password saat ini"
+                value={currentPassword}
+                onChange={(e) => setCurrentPassword(e.target.value)}
+                disabled={isSubmitting}
+                className="h-9 text-xs"
+              />
+            </div>
+
+            <div className="space-y-1">
               <Label htmlFor="profile-new-pass" className="text-xs">Password Baru</Label>
               <div className="relative">
                 <Input
@@ -189,7 +210,7 @@ export default function ProfileDialog({ open, onOpenChange }: ProfileDialogProps
 
             <Button
               type="submit"
-              disabled={isSubmitting || !newPassword}
+              disabled={isSubmitting || !currentPassword || !newPassword}
               className="w-full text-xs"
               size="sm"
             >

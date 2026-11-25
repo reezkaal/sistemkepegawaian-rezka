@@ -163,10 +163,29 @@ export async function deleteUser(userId: string): Promise<void> {
 
 /**
  * Ganti password mandiri oleh pengguna yang sedang login.
+ * Memverifikasi password lama terlebih dahulu sebelum mengubah password.
  */
-export async function changeOwnPassword(newPassword: string): Promise<void> {
+export async function changeOwnPassword(
+  currentPassword: string,
+  newPassword: string,
+): Promise<void> {
   if (!isSupabaseConfigured) {
     throw new Error('Supabase belum dikonfigurasi.')
+  }
+
+  const { data: { user }, error: userError } = await supabase.auth.getUser()
+  if (userError || !user?.email) {
+    throw new Error('Sesi pengguna tidak ditemukan. Silakan login kembali.')
+  }
+
+  // Verifikasi ulang password lama
+  const { error: verifyError } = await supabase.auth.signInWithPassword({
+    email: user.email,
+    password: currentPassword,
+  })
+
+  if (verifyError) {
+    throw new Error('Password lama tidak sesuai.')
   }
 
   const { error } = await supabase.auth.updateUser({
