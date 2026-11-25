@@ -32,6 +32,7 @@ interface ProfileDialogProps {
 
 export default function ProfileDialog({ open, onOpenChange }: ProfileDialogProps) {
   const { user } = useAuth()
+  const [isChangingPassword, setIsChangingPassword] = useState(false)
   const [currentPassword, setCurrentPassword] = useState('')
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
@@ -40,13 +41,18 @@ export default function ProfileDialog({ open, onOpenChange }: ProfileDialogProps
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
 
+  function resetPasswordForm() {
+    setCurrentPassword('')
+    setNewPassword('')
+    setConfirmPassword('')
+    setShowPassword(false)
+    setError(null)
+  }
+
   function handleOpenChange(nextOpen: boolean) {
     if (!nextOpen) {
-      setCurrentPassword('')
-      setNewPassword('')
-      setConfirmPassword('')
-      setShowPassword(false)
-      setError(null)
+      setIsChangingPassword(false)
+      resetPasswordForm()
       setSuccess(false)
     }
     onOpenChange(nextOpen)
@@ -76,9 +82,8 @@ export default function ProfileDialog({ open, onOpenChange }: ProfileDialogProps
     try {
       await changeOwnPassword(currentPassword, newPassword)
       setSuccess(true)
-      setCurrentPassword('')
-      setNewPassword('')
-      setConfirmPassword('')
+      resetPasswordForm()
+      setIsChangingPassword(false)
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Gagal mengubah password.')
     } finally {
@@ -138,86 +143,116 @@ export default function ProfileDialog({ open, onOpenChange }: ProfileDialogProps
         </div>
 
         {/* Change Password Section */}
-        <div className="mt-2 space-y-3 rounded-xl border border-border bg-card p-4">
-          <div className="flex items-center gap-2 border-b border-border pb-2.5">
-            <KeyRound className="h-4 w-4 text-primary" />
-            <h4 className="text-sm font-semibold text-foreground">Ganti Password Mandiri</h4>
+        {success && (
+          <div className="flex items-center gap-2 rounded-lg border border-success/30 bg-success/10 px-3 py-2.5 text-xs text-success">
+            <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
+            <span>Password berhasil diperbarui!</span>
           </div>
+        )}
 
-          {error && (
-            <div className="flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2.5 text-xs text-destructive">
-              <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-              <span>{error}</span>
-            </div>
-          )}
-
-          {success && (
-            <div className="flex items-center gap-2 rounded-lg border border-success/30 bg-success/10 px-3 py-2.5 text-xs text-success">
-              <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
-              <span>Password berhasil diperbarui!</span>
-            </div>
-          )}
-
-          <form onSubmit={handlePasswordSubmit} className="space-y-3">
-            <div className="space-y-1">
-              <Label htmlFor="profile-current-pass" className="text-xs">Password Lama</Label>
-              <Input
-                id="profile-current-pass"
-                type={showPassword ? 'text' : 'password'}
-                placeholder="Masukkan password saat ini"
-                value={currentPassword}
-                onChange={(e) => setCurrentPassword(e.target.value)}
-                disabled={isSubmitting}
-                className="h-9 text-xs"
-              />
+        {!isChangingPassword ? (
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => {
+              setSuccess(false)
+              setIsChangingPassword(true)
+            }}
+            className="w-full gap-2 text-xs"
+          >
+            <KeyRound className="h-3.5 w-3.5 text-primary" />
+            Ganti Password
+          </Button>
+        ) : (
+          <div className="mt-2 space-y-3 rounded-xl border border-border bg-card p-4">
+            <div className="flex items-center gap-2 border-b border-border pb-2.5">
+              <KeyRound className="h-4 w-4 text-primary" />
+              <h4 className="text-sm font-semibold text-foreground">Ganti Password Mandiri</h4>
             </div>
 
-            <div className="space-y-1">
-              <Label htmlFor="profile-new-pass" className="text-xs">Password Baru</Label>
-              <div className="relative">
-                <Input
-                  id="profile-new-pass"
-                  type={showPassword ? 'text' : 'password'}
-                  placeholder="Minimal 6 karakter"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  disabled={isSubmitting}
-                  className="h-9 pr-9 text-xs"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword((v) => !v)}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                  tabIndex={-1}
-                >
-                  {showPassword ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
-                </button>
+            {error && (
+              <div className="flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2.5 text-xs text-destructive">
+                <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                <span>{error}</span>
               </div>
-            </div>
+            )}
 
-            <div className="space-y-1">
-              <Label htmlFor="profile-confirm-pass" className="text-xs">Konfirmasi Password Baru</Label>
-              <Input
-                id="profile-confirm-pass"
-                type={showPassword ? 'text' : 'password'}
-                placeholder="Ulangi password baru"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                disabled={isSubmitting}
-                className="h-9 text-xs"
-              />
-            </div>
+            <form onSubmit={handlePasswordSubmit} className="space-y-3">
+              <div className="space-y-1">
+                <Label htmlFor="profile-current-pass" className="text-xs">Password Lama</Label>
+                <Input
+                  id="profile-current-pass"
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="Masukkan password saat ini"
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  disabled={isSubmitting}
+                  className="h-9 text-xs"
+                />
+              </div>
 
-            <Button
-              type="submit"
-              disabled={isSubmitting || !currentPassword || !newPassword}
-              className="w-full text-xs"
-              size="sm"
-            >
-              {isSubmitting ? 'Memperbarui...' : 'Simpan Password Baru'}
-            </Button>
-          </form>
-        </div>
+              <div className="space-y-1">
+                <Label htmlFor="profile-new-pass" className="text-xs">Password Baru</Label>
+                <div className="relative">
+                  <Input
+                    id="profile-new-pass"
+                    type={showPassword ? 'text' : 'password'}
+                    placeholder="Minimal 6 karakter"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    disabled={isSubmitting}
+                    className="h-9 pr-9 text-xs"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((v) => !v)}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    tabIndex={-1}
+                  >
+                    {showPassword ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                  </button>
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <Label htmlFor="profile-confirm-pass" className="text-xs">Konfirmasi Password Baru</Label>
+                <Input
+                  id="profile-confirm-pass"
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="Ulangi password baru"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  disabled={isSubmitting}
+                  className="h-9 text-xs"
+                />
+              </div>
+
+              <div className="flex gap-2 pt-1">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    resetPasswordForm()
+                    setIsChangingPassword(false)
+                  }}
+                  disabled={isSubmitting}
+                  className="flex-1 text-xs"
+                  size="sm"
+                >
+                  Batal
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={isSubmitting || !currentPassword || !newPassword}
+                  className="flex-1 text-xs"
+                  size="sm"
+                >
+                  {isSubmitting ? 'Memperbarui...' : 'Simpan Password'}
+                </Button>
+              </div>
+            </form>
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   )
