@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { verifyCaller } from './_lib/auth'
+import { verifyCaller } from './_lib/auth.js'
 
 /**
  * GET /api/leave
