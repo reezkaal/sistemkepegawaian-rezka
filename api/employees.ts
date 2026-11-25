@@ -1,13 +1,17 @@
-﻿import type { VercelRequest, VercelResponse } from '@vercel/node'
+import type { VercelRequest, VercelResponse } from '@vercel/node'
+import { verifyCaller } from './_lib/auth'
 
 /**
  * GET /api/employees
  *
  * Server-side proxy ke Google Apps Script.
+ * Memerlukan JWT Supabase yang valid pada header Authorization.
+ * - Role superadmin/admin: mendapatkan seluruh data pegawai.
+ * - Role user: mendapatkan data penuh hanya untuk NIP miliknya sendiri;
+ *   pegawai lain disaring ke field non-PII untuk kebutuhan grafik Dashboard.
+ *
  * GOOGLE_APPS_SCRIPT_URL dibaca dari environment variable server-side
  * (Vercel dashboard) - tidak pernah dikirim ke browser.
- *
- * Tidak ada URL GAS yang bocor ke response atau log production.
  */
 
 const TIMEOUT_MS = 60_000
@@ -15,6 +19,12 @@ const TIMEOUT_MS = 60_000
 export default async function handler(req: VercelRequest, res: VercelResponse): Promise<void> {
   if (req.method !== 'GET') {
     res.status(405).json({ error: 'Method Not Allowed' })
+    return
+  }
+
+  const auth = await verifyCaller(req)
+  if (!auth.ok) {
+    res.status(auth.status).json({ error: auth.error })
     return
   }
 
@@ -50,8 +60,29 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
       return
     }
 
+    const payload =
+      auth.role === 'user' && Array.isArray(data)
+        ? data.map((row: Record<string, unknown>) => {
+            if (auth.nip && row.nip === auth.nip) {
+              return row
+            }
+            return {
+              nama: '(Terbatas)',
+              nip: '',
+              golongan: row.golongan,
+              status: row.status,
+              satker: row.satker,
+              bidangBagian: row.bidangBagian,
+              jenisKelamin: row.jenisKelamin,
+              tanggalLahir: row.tanggalLahir,
+              tingkatPendidikan: row.tingkatPendidikan,
+            }
+          })
+        : data
+
     res.setHeader('Content-Type', 'application/json')
-    res.status(200).json(data)
+    res.setHeader('Cache-Control', 'no-store')
+    res.status(200).json(payload)
   } catch (err: unknown) {
     clearTimeout(timeout)
     if (err instanceof Error && err.name === 'AbortError') {

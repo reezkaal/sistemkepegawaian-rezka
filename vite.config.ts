@@ -63,9 +63,66 @@ export default defineConfig(({ mode }) => {
         }
       }
 
-      server.middlewares.use('/api/employees', (_req, res, next) => {
-        proxyToGas('employees')
-          .then(({ status, body }) => {
+      async function verifyDevCaller(authHeader: string | undefined): Promise<{ ok: true; role: string; nip: string | null } | { ok: false; status: number; body: string }> {
+        if (!supabaseUrl || !supabaseAnonKey) {
+          return { ok: true, role: 'superadmin', nip: null }
+        }
+        if (!authHeader?.startsWith('Bearer ')) {
+          return { ok: false, status: 401, body: JSON.stringify({ error: 'Token autentikasi tidak ditemukan.' }) }
+        }
+        const token = authHeader.slice(7).trim()
+        const { createClient } = await import('@supabase/supabase-js')
+        const anonClient = createClient(supabaseUrl, supabaseAnonKey, { auth: { persistSession: false } })
+        const { data: { user }, error } = await anonClient.auth.getUser(token)
+        if (error || !user) {
+          return { ok: false, status: 401, body: JSON.stringify({ error: 'Token tidak valid atau kedaluwarsa.' }) }
+        }
+        const profileClient = serviceRoleKey
+          ? createClient(supabaseUrl, serviceRoleKey, { auth: { persistSession: false } })
+          : createClient(supabaseUrl, supabaseAnonKey, { global: { headers: { Authorization: `Bearer ${token}` } }, auth: { persistSession: false } })
+        const { data: profile } = await profileClient.from('profiles').select('role, nip').eq('id', user.id).single()
+        if (!profile) {
+          return { ok: false, status: 403, body: JSON.stringify({ error: 'Profil pengguna tidak ditemukan.' }) }
+        }
+        return { ok: true, role: profile.role as string, nip: (profile.nip as string | null) ?? null }
+      }
+
+      server.middlewares.use('/api/employees', (req, res, next) => {
+        verifyDevCaller(req.headers.authorization)
+          .then(async (auth) => {
+            if (!auth.ok) {
+              res.statusCode = auth.status
+              res.setHeader('Content-Type', 'application/json')
+              res.end(auth.body)
+              return
+            }
+            const { status, body } = await proxyToGas('employees')
+            if (status === 200 && auth.role === 'user') {
+              try {
+                const parsed = JSON.parse(body)
+                if (Array.isArray(parsed)) {
+                  const filtered = parsed.map((row: Record<string, unknown>) =>
+                    auth.nip && row.nip === auth.nip
+                      ? row
+                      : {
+                          nama: '(Terbatas)',
+                          nip: '',
+                          golongan: row.golongan,
+                          status: row.status,
+                          satker: row.satker,
+                          bidangBagian: row.bidangBagian,
+                          jenisKelamin: row.jenisKelamin,
+                          tanggalLahir: row.tanggalLahir,
+                          tingkatPendidikan: row.tingkatPendidikan,
+                        },
+                  )
+                  res.statusCode = 200
+                  res.setHeader('Content-Type', 'application/json')
+                  res.end(JSON.stringify(filtered))
+                  return
+                }
+              } catch { /* fallback ke body asli */ }
+            }
             res.statusCode = status
             res.setHeader('Content-Type', 'application/json')
             res.end(body)
@@ -73,9 +130,16 @@ export default defineConfig(({ mode }) => {
           .catch(next)
       })
 
-      server.middlewares.use('/api/leave', (_req, res, next) => {
-        proxyToGas('leave')
-          .then(({ status, body }) => {
+      server.middlewares.use('/api/leave', (req, res, next) => {
+        verifyDevCaller(req.headers.authorization)
+          .then(async (auth) => {
+            if (!auth.ok) {
+              res.statusCode = auth.status
+              res.setHeader('Content-Type', 'application/json')
+              res.end(auth.body)
+              return
+            }
+            const { status, body } = await proxyToGas('leave')
             res.statusCode = status
             res.setHeader('Content-Type', 'application/json')
             res.end(body)

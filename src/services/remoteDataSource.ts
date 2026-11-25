@@ -1,5 +1,6 @@
 import type { Employee, JenisKelamin, StatusKepegawaian } from '@/types/employee'
 import type { LeaveRecord, LeaveYearValue } from '@/types/leave'
+import { supabase, isSupabaseConfigured } from '@/lib/supabase'
 
 /**
  * Data source REMOTE — lihat kontrak JSON lengkap di
@@ -86,6 +87,17 @@ export function invalidateRemoteLeaveCache(): void {
   pendingLeaveRequest = null
 }
 
+async function getAuthHeaders(): Promise<HeadersInit> {
+  if (!isSupabaseConfigured) return {}
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session?.access_token) {
+    throw new Error('Sesi login tidak ditemukan. Silakan login kembali.')
+  }
+  return {
+    Authorization: `Bearer ${session.access_token}`,
+  }
+}
+
 /**
  * Fetch /api/employees — Vercel serverless proxy ke GAS.
  * Path relatif agar berfungsi di semua environment (Vercel production,
@@ -94,7 +106,8 @@ export function invalidateRemoteLeaveCache(): void {
 function fetchEmployees(): Promise<RemoteEmployeeRow[]> {
   if (pendingEmployeesRequest !== null) return pendingEmployeesRequest
 
-  pendingEmployeesRequest = fetch('/api/employees')
+  pendingEmployeesRequest = getAuthHeaders()
+    .then((headers) => fetch('/api/employees', { headers }))
     .then((response) => {
       if (!response.ok) {
         throw new Error(`Gagal mengambil data pegawai (HTTP ${response.status}).`)
@@ -115,7 +128,8 @@ function fetchEmployees(): Promise<RemoteEmployeeRow[]> {
 function fetchLeave(): Promise<RemoteLeaveYearRow[]> {
   if (pendingLeaveRequest !== null) return pendingLeaveRequest
 
-  pendingLeaveRequest = fetch('/api/leave')
+  pendingLeaveRequest = getAuthHeaders()
+    .then((headers) => fetch('/api/leave', { headers }))
     .then((response) => {
       if (!response.ok) {
         throw new Error(`Gagal mengambil data cuti (HTTP ${response.status}).`)

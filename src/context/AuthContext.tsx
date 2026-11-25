@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState, useCallback, type React
 import { supabase, isSupabaseConfigured } from '@/lib/supabase'
 import type { AuthUser, AuthContextType, UserRole } from '@/types/auth'
 import { validateMockCredentials } from '@/mock/authUsers'
+import { invalidateEmployeesCache, invalidateLeaveRecordsCache } from '@/services/api'
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
@@ -225,6 +226,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Fungsi Logout
   const logout = useCallback(async () => {
+    invalidateEmployeesCache()
+    invalidateLeaveRecordsCache()
     if (isSupabaseConfigured) {
       await supabase.auth.signOut()
     } else {

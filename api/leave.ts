@@ -1,13 +1,13 @@
-﻿import type { VercelRequest, VercelResponse } from '@vercel/node'
+import type { VercelRequest, VercelResponse } from '@vercel/node'
+import { verifyCaller } from './_lib/auth'
 
 /**
  * GET /api/leave
  *
  * Server-side proxy ke Google Apps Script.
+ * Memerlukan JWT Supabase yang valid pada header Authorization.
  * GOOGLE_APPS_SCRIPT_URL dibaca dari environment variable server-side
  * (Vercel dashboard) - tidak pernah dikirim ke browser.
- *
- * Tidak ada URL GAS yang bocor ke response atau log production.
  */
 
 const TIMEOUT_MS = 35_000
@@ -15,6 +15,12 @@ const TIMEOUT_MS = 35_000
 export default async function handler(req: VercelRequest, res: VercelResponse): Promise<void> {
   if (req.method !== 'GET') {
     res.status(405).json({ error: 'Method Not Allowed' })
+    return
+  }
+
+  const auth = await verifyCaller(req)
+  if (!auth.ok) {
+    res.status(auth.status).json({ error: auth.error })
     return
   }
 
@@ -51,6 +57,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     }
 
     res.setHeader('Content-Type', 'application/json')
+    res.setHeader('Cache-Control', 'no-store')
     res.status(200).json(data)
   } catch (err: unknown) {
     clearTimeout(timeout)

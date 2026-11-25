@@ -24,21 +24,37 @@ CREATE TABLE IF NOT EXISTS public.profiles (
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 
 -- 4. Berikan Hak Akses Tabel (Permissions) ke Authenticated User & Service Role
+-- Hanya beri hak SELECT ke authenticated (tidak boleh INSERT/UPDATE/DELETE langsung dari client)
 GRANT USAGE ON SCHEMA public TO anon, authenticated;
-GRANT ALL ON TABLE public.profiles TO authenticated, service_role;
+REVOKE ALL ON TABLE public.profiles FROM anon, authenticated;
+GRANT SELECT ON TABLE public.profiles TO authenticated;
+GRANT ALL ON TABLE public.profiles TO service_role;
+
+-- Helper function untuk membaca role user saat ini tanpa memicu rekursi RLS
+CREATE OR REPLACE FUNCTION public.get_my_role()
+RETURNS public.app_role
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT role FROM public.profiles WHERE id = auth.uid();
+$$;
 
 -- 5. Kebijakan RLS (Security Policies)
 DROP POLICY IF EXISTS "Allow authenticated read profiles" ON public.profiles;
-CREATE POLICY "Allow authenticated read profiles"
+DROP POLICY IF EXISTS "Allow read own or admin read all profiles" ON public.profiles;
+CREATE POLICY "Allow read own or admin read all profiles"
   ON public.profiles FOR SELECT
   TO authenticated
-  USING (true);
+  USING (
+    auth.uid() = id
+    OR public.get_my_role() IN ('superadmin', 'admin')
+  );
 
+-- Hapus policy UPDATE langsung oleh user agar tidak bisa mengubah kolom role sendiri
+-- Semua perubahan profil/role dilakukan melalui server-side API (service_role)
 DROP POLICY IF EXISTS "Allow user update own profile" ON public.profiles;
-CREATE POLICY "Allow user update own profile"
-  ON public.profiles FOR UPDATE
-  TO authenticated
-  USING (auth.uid() = id);
 
 -- 6. Trigger Otomatis saat Akun Dibuat di auth.users
 CREATE OR REPLACE FUNCTION public.handle_new_user()

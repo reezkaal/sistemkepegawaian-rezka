@@ -114,24 +114,119 @@ export default defineConfig(function (_a) {
                     });
                 });
             }
-            server.middlewares.use('/api/employees', function (_req, res, next) {
-                proxyToGas('employees')
-                    .then(function (_a) {
-                    var status = _a.status, body = _a.body;
-                    res.statusCode = status;
-                    res.setHeader('Content-Type', 'application/json');
-                    res.end(body);
-                })
+            function verifyDevCaller(authHeader) {
+                return __awaiter(this, void 0, void 0, function () {
+                    var token, createClient, anonClient, _a, user, error, profileClient, profile;
+                    var _b;
+                    return __generator(this, function (_c) {
+                        switch (_c.label) {
+                            case 0:
+                                if (!supabaseUrl || !supabaseAnonKey) {
+                                    return [2 /*return*/, { ok: true, role: 'superadmin', nip: null }];
+                                }
+                                if (!(authHeader === null || authHeader === void 0 ? void 0 : authHeader.startsWith('Bearer '))) {
+                                    return [2 /*return*/, { ok: false, status: 401, body: JSON.stringify({ error: 'Token autentikasi tidak ditemukan.' }) }];
+                                }
+                                token = authHeader.slice(7).trim();
+                                return [4 /*yield*/, import('@supabase/supabase-js')];
+                            case 1:
+                                createClient = (_c.sent()).createClient;
+                                anonClient = createClient(supabaseUrl, supabaseAnonKey, { auth: { persistSession: false } });
+                                return [4 /*yield*/, anonClient.auth.getUser(token)];
+                            case 2:
+                                _a = _c.sent(), user = _a.data.user, error = _a.error;
+                                if (error || !user) {
+                                    return [2 /*return*/, { ok: false, status: 401, body: JSON.stringify({ error: 'Token tidak valid atau kedaluwarsa.' }) }];
+                                }
+                                profileClient = serviceRoleKey
+                                    ? createClient(supabaseUrl, serviceRoleKey, { auth: { persistSession: false } })
+                                    : createClient(supabaseUrl, supabaseAnonKey, { global: { headers: { Authorization: "Bearer ".concat(token) } }, auth: { persistSession: false } });
+                                return [4 /*yield*/, profileClient.from('profiles').select('role, nip').eq('id', user.id).single()];
+                            case 3:
+                                profile = (_c.sent()).data;
+                                if (!profile) {
+                                    return [2 /*return*/, { ok: false, status: 403, body: JSON.stringify({ error: 'Profil pengguna tidak ditemukan.' }) }];
+                                }
+                                return [2 /*return*/, { ok: true, role: profile.role, nip: (_b = profile.nip) !== null && _b !== void 0 ? _b : null }];
+                        }
+                    });
+                });
+            }
+            server.middlewares.use('/api/employees', function (req, res, next) {
+                verifyDevCaller(req.headers.authorization)
+                    .then(function (auth) { return __awaiter(_this, void 0, void 0, function () {
+                    var _a, status, body, parsed, filtered;
+                    return __generator(this, function (_b) {
+                        switch (_b.label) {
+                            case 0:
+                                if (!auth.ok) {
+                                    res.statusCode = auth.status;
+                                    res.setHeader('Content-Type', 'application/json');
+                                    res.end(auth.body);
+                                    return [2 /*return*/];
+                                }
+                                return [4 /*yield*/, proxyToGas('employees')];
+                            case 1:
+                                _a = _b.sent(), status = _a.status, body = _a.body;
+                                if (status === 200 && auth.role === 'user') {
+                                    try {
+                                        parsed = JSON.parse(body);
+                                        if (Array.isArray(parsed)) {
+                                            filtered = parsed.map(function (row) {
+                                                return auth.nip && row.nip === auth.nip
+                                                    ? row
+                                                    : {
+                                                        nama: '(Terbatas)',
+                                                        nip: '',
+                                                        golongan: row.golongan,
+                                                        status: row.status,
+                                                        satker: row.satker,
+                                                        bidangBagian: row.bidangBagian,
+                                                        jenisKelamin: row.jenisKelamin,
+                                                        tanggalLahir: row.tanggalLahir,
+                                                        tingkatPendidikan: row.tingkatPendidikan,
+                                                    };
+                                            });
+                                            res.statusCode = 200;
+                                            res.setHeader('Content-Type', 'application/json');
+                                            res.end(JSON.stringify(filtered));
+                                            return [2 /*return*/];
+                                        }
+                                    }
+                                    catch ( /* fallback ke body asli */_c) { /* fallback ke body asli */ }
+                                }
+                                res.statusCode = status;
+                                res.setHeader('Content-Type', 'application/json');
+                                res.end(body);
+                                return [2 /*return*/];
+                        }
+                    });
+                }); })
                     .catch(next);
             });
-            server.middlewares.use('/api/leave', function (_req, res, next) {
-                proxyToGas('leave')
-                    .then(function (_a) {
-                    var status = _a.status, body = _a.body;
-                    res.statusCode = status;
-                    res.setHeader('Content-Type', 'application/json');
-                    res.end(body);
-                })
+            server.middlewares.use('/api/leave', function (req, res, next) {
+                verifyDevCaller(req.headers.authorization)
+                    .then(function (auth) { return __awaiter(_this, void 0, void 0, function () {
+                    var _a, status, body;
+                    return __generator(this, function (_b) {
+                        switch (_b.label) {
+                            case 0:
+                                if (!auth.ok) {
+                                    res.statusCode = auth.status;
+                                    res.setHeader('Content-Type', 'application/json');
+                                    res.end(auth.body);
+                                    return [2 /*return*/];
+                                }
+                                return [4 /*yield*/, proxyToGas('leave')];
+                            case 1:
+                                _a = _b.sent(), status = _a.status, body = _a.body;
+                                res.statusCode = status;
+                                res.setHeader('Content-Type', 'application/json');
+                                res.end(body);
+                                return [2 /*return*/];
+                        }
+                    });
+                }); })
                     .catch(next);
             });
             // Dev proxy untuk /api/auth/create-user
