@@ -32,11 +32,7 @@ export default function AppShell() {
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-background">
       {/* Header — tidak scroll, selalu di atas */}
-      <Header
-        onToggleMobileNav={() => setMobileNavOpen((v) => !v)}
-        onToggleDesktopSidebar={toggleDesktopSidebar}
-        isSidebarCollapsed={isCollapsed}
-      />
+      <Header onToggleMobileNav={() => setMobileNavOpen((v) => !v)} />
 
       <div className="flex flex-1 overflow-hidden">
         {/* Sidebar desktop — sticky, hanya scroll sendiri jika kontennya panjang */}
@@ -46,7 +42,7 @@ export default function AppShell() {
             isCollapsed ? 'w-16' : 'w-64',
           )}
         >
-          <Sidebar collapsed={isCollapsed} />
+          <Sidebar collapsed={isCollapsed} onToggleCollapse={toggleDesktopSidebar} />
         </aside>
 
         {/* Sidebar mobile (overlay) */}

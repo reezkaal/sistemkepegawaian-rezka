@@ -1,23 +1,17 @@
 import { useState } from 'react'
-import { Menu, PanelLeftClose, PanelLeftOpen } from 'lucide-react'
+import { Menu } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
 import ThemeToggle from '@/components/layout/ThemeToggle'
 import ProfileDialog from '@/components/profile/ProfileDialog'
 
 interface HeaderProps {
   onToggleMobileNav: () => void
-  onToggleDesktopSidebar?: () => void
-  isSidebarCollapsed?: boolean
 }
 
 // Header light/white surface, sticky dengan aksen glass tipis (blur +
 // transparansi) — bukan gradient, hanya kedalaman lapisan tipis di atas
 // konten yang scroll di baliknya.
-export default function Header({
-  onToggleMobileNav,
-  onToggleDesktopSidebar,
-  isSidebarCollapsed = false,
-}: HeaderProps) {
+export default function Header({ onToggleMobileNav }: HeaderProps) {
   const { user } = useAuth()
   const [profileOpen, setProfileOpen] = useState(false)
 
@@ -40,23 +34,6 @@ export default function Header({
         >
           <Menu className="h-5 w-5" aria-hidden="true" />
         </button>
-
-        {/* Tombol collapse/expand sidebar desktop (ikon saja) */}
-        {onToggleDesktopSidebar && (
-          <button
-            type="button"
-            onClick={onToggleDesktopSidebar}
-            className="hidden h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring lg:inline-flex"
-            title={isSidebarCollapsed ? 'Perluas sidebar' : 'Perkecil sidebar (hanya ikon)'}
-            aria-label={isSidebarCollapsed ? 'Perluas sidebar' : 'Perkecil sidebar (hanya ikon)'}
-          >
-            {isSidebarCollapsed ? (
-              <PanelLeftOpen className="h-5 w-5" aria-hidden="true" />
-            ) : (
-              <PanelLeftClose className="h-5 w-5" aria-hidden="true" />
-            )}
-          </button>
-        )}
 
         <div className="flex items-center gap-2.5">
           <img

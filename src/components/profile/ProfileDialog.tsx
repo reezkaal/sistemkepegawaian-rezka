@@ -117,7 +117,7 @@ export default function ProfileDialog({ open, onOpenChange }: ProfileDialogProps
         </DialogHeader>
 
         {/* User Info Header Card */}
-        <div className="flex items-center gap-3.5 rounded-xl border border-border bg-secondary/40 p-4">
+        <div className="mt-3 flex items-center gap-3.5 rounded-xl border border-border bg-secondary/40 p-4">
           <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary font-bold text-primary-foreground shadow-sm">
             {initials}
           </div>
@@ -144,7 +144,7 @@ export default function ProfileDialog({ open, onOpenChange }: ProfileDialogProps
 
         {/* Change Password Section */}
         {success && (
-          <div className="flex items-center gap-2 rounded-lg border border-success/30 bg-success/10 px-3 py-2.5 text-xs text-success">
+          <div className="mt-3 flex items-center gap-2 rounded-lg border border-success/30 bg-success/10 px-3 py-2.5 text-xs text-success">
             <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
             <span>Password berhasil diperbarui!</span>
           </div>
@@ -158,13 +158,13 @@ export default function ProfileDialog({ open, onOpenChange }: ProfileDialogProps
               setSuccess(false)
               setIsChangingPassword(true)
             }}
-            className="w-full gap-2 text-xs"
+            className="mt-3 w-full gap-2 text-xs"
           >
             <KeyRound className="h-3.5 w-3.5 text-primary" />
             Ganti Password
           </Button>
         ) : (
-          <div className="mt-2 space-y-3 rounded-xl border border-border bg-card p-4">
+          <div className="mt-3 space-y-3 rounded-xl border border-border bg-card p-4">
             <div className="flex items-center gap-2 border-b border-border pb-2.5">
               <KeyRound className="h-4 w-4 text-primary" />
               <h4 className="text-sm font-semibold text-foreground">Ganti Password Mandiri</h4>

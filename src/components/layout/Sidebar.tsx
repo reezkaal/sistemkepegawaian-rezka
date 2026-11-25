@@ -7,6 +7,8 @@ import {
   FileText,
   UserCog,
   LogOut,
+  PanelLeftClose,
+  PanelLeftOpen,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/hooks/useAuth'
@@ -31,9 +33,10 @@ const NAV_ITEMS: NavItem[] = [
 interface SidebarProps {
   onNavigate?: () => void
   collapsed?: boolean
+  onToggleCollapse?: () => void
 }
 
-export default function Sidebar({ onNavigate, collapsed = false }: SidebarProps) {
+export default function Sidebar({ onNavigate, collapsed = false, onToggleCollapse }: SidebarProps) {
   const { role, logout } = useAuth()
   const navigate = useNavigate()
   const [confirmOpen, setConfirmOpen] = useState(false)
@@ -105,7 +108,26 @@ export default function Sidebar({ onNavigate, collapsed = false }: SidebarProps)
         </ul>
       </div>
 
-      <div className={cn('border-t border-border pt-3', collapsed ? 'space-y-2' : 'space-y-1')}>
+      <div>
+        {onToggleCollapse && (
+          <div className="mb-2 hidden lg:flex lg:justify-center">
+            <button
+              type="button"
+              onClick={onToggleCollapse}
+              title={collapsed ? 'Perluas sidebar' : 'Perkecil sidebar'}
+              aria-label={collapsed ? 'Perluas sidebar' : 'Perkecil sidebar'}
+              className="flex h-10 w-10 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              {collapsed ? (
+                <PanelLeftOpen className="h-5 w-5 shrink-0" aria-hidden="true" />
+              ) : (
+                <PanelLeftClose className="h-5 w-5 shrink-0" aria-hidden="true" />
+              )}
+            </button>
+          </div>
+        )}
+
+        <div className={cn('border-t border-border pt-3', collapsed ? 'space-y-2' : 'space-y-1')}>
         {canManageUsers && (
           <NavLink
             to="/kelola-pengguna"
@@ -162,6 +184,7 @@ export default function Sidebar({ onNavigate, collapsed = false }: SidebarProps)
           />
           {!collapsed && <span>Logout</span>}
         </button>
+        </div>
       </div>
 
       <LogoutDialog open={confirmOpen} onOpenChange={setConfirmOpen} onConfirm={handleConfirmLogout} />
