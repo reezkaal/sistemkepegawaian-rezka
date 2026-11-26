@@ -56,6 +56,7 @@ export function useEmployeeList(
   satkerFilter: SatkerFilter,
   bidangFilter: BidangFilter,
   statusFilter: StatusKepegawaianFilter,
+  aktifFilter: '' | 'aktif' | 'tidak_aktif' = '',
 ): UseEmployeeListResult {
   const [allEmployees, setAllEmployees] = useState<EmployeeListItem[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -146,16 +147,18 @@ export function useEmployeeList(
       if (satkerFilter && e.satker !== satkerFilter) return false
       if (bidangFilter && e.bidangBagian !== bidangFilter) return false
       if (statusFilter && e.statusKepegawaian !== statusFilter) return false
+      if (aktifFilter === 'aktif' && !e.statusAktif) return false
+      if (aktifFilter === 'tidak_aktif' && e.statusAktif) return false
       return true
     })
-  }, [allEmployees, namaQuery, nipQuery, satkerFilter, bidangFilter, statusFilter])
+  }, [allEmployees, namaQuery, nipQuery, satkerFilter, bidangFilter, statusFilter, aktifFilter])
 
   // Reset ke halaman 1 setiap kali search/filter berubah. Perubahan sorting
   // TIDAK dimasukkan di sini — itu ditangani langsung di dalam
   // `onToggleNamaSort` di atas supaya sinkron dalam satu batch render.
   useEffect(() => {
     setPage(1)
-  }, [namaQuery, nipQuery, satkerFilter, bidangFilter, statusFilter])
+  }, [namaQuery, nipQuery, satkerFilter, bidangFilter, statusFilter, aktifFilter])
 
   // `filtered` adalah dataset SUMBER yang tidak pernah diurutkan/dimutasi —
   // ia HANYA turunan search/filter dari `allEmployees` (urutan asli API).

@@ -14,6 +14,8 @@ interface EmployeeFiltersProps {
   bidangFilter: string
   onBidangFilterChange: (value: string) => void
   bidangOptions: string[]
+  aktifFilter: string
+  onAktifFilterChange: (value: string) => void
 }
 
 const inputCls =
@@ -44,8 +46,10 @@ export default function EmployeeFilters({
   bidangFilter,
   onBidangFilterChange,
   bidangOptions,
+  aktifFilter,
+  onAktifFilterChange,
 }: EmployeeFiltersProps) {
-  const activeFilters = [namaQuery, nipQuery, statusFilter, satkerFilter, bidangFilter].filter(Boolean)
+  const activeFilters = [namaQuery, nipQuery, statusFilter, satkerFilter, bidangFilter, aktifFilter].filter(Boolean)
   const activeCount = activeFilters.length
 
   function handleReset() {
@@ -54,6 +58,7 @@ export default function EmployeeFilters({
     onStatusFilterChange('')
     onSatkerFilterChange('')
     onBidangFilterChange('')
+    onAktifFilterChange('')
   }
 
   return (
@@ -127,8 +132,8 @@ export default function EmployeeFilters({
         </div>
       </div>
 
-      {/* Baris 2: 3 Kolom Dropdown Filter (Status, Satker, Bidang/Bagian) */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+      {/* Baris 2: 4 Kolom Dropdown Filter (Status Kepegawaian, Status Aktif, Satker, Bidang/Bagian) */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <div>
           <label htmlFor="filter-status" className={labelCls}>
             Status Kepegawaian
@@ -145,6 +150,22 @@ export default function EmployeeFilters({
                 {status}
               </option>
             ))}
+          </select>
+        </div>
+
+        <div>
+          <label htmlFor="filter-aktif" className={labelCls}>
+            Status Aktif
+          </label>
+          <select
+            id="filter-aktif"
+            value={aktifFilter}
+            onChange={(e) => onAktifFilterChange(e.target.value)}
+            className={selectCls}
+          >
+            <option value="">Semua</option>
+            <option value="aktif">Aktif</option>
+            <option value="tidak_aktif">Tidak Aktif</option>
           </select>
         </div>
 

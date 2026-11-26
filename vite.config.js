@@ -185,6 +185,7 @@ export default defineConfig(function (_a) {
                                                         jenisKelamin: row.jenisKelamin,
                                                         tanggalLahir: row.tanggalLahir,
                                                         tingkatPendidikan: row.tingkatPendidikan,
+                                                        statusAktif: row.statusAktif,
                                                     };
                                             });
                                             res.statusCode = 200;

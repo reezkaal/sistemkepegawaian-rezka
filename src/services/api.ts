@@ -95,6 +95,7 @@ function toEmployeeListItem(e: Employee): EmployeeListItem {
     satker: e.satuanKerja,
     bidangBagian: e.bidangBagian,
     statusKepegawaian: e.statusKepegawaian,
+    statusAktif: e.statusAktif,
   }
 }
 

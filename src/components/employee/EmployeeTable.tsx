@@ -22,7 +22,7 @@ function NamaSortIcon({ direction }: { direction: NamaSortDirection }) {
   return <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground/60" aria-hidden="true" />
 }
 
-const COLUMN_COUNT = 7
+const COLUMN_COUNT = 8
 
 /** Warna badge Status Kepegawaian - solid, tanpa gradient (lihat CLAUDE.md § 4). */
 function statusTone(status: string): 'secondary' | 'success' {
@@ -83,6 +83,9 @@ export default function EmployeeTable({
             <th scope="col" className="px-4 py-3">
               Status Kepegawaian
             </th>
+            <th scope="col" className="px-4 py-3">
+              Status Aktif
+            </th>
             <th scope="col" className="px-4 py-3 text-right">
               Aksi
             </th>
@@ -131,6 +134,11 @@ export default function EmployeeTable({
                 <td className="px-4 py-3">
                   <Badge tone={statusTone(employee.statusKepegawaian)}>
                     {employee.statusKepegawaian || '-'}
+                  </Badge>
+                </td>
+                <td className="px-4 py-3">
+                  <Badge tone={employee.statusAktif ? 'success' : 'muted'}>
+                    {employee.statusAktif ? 'Aktif' : 'Tidak Aktif'}
                   </Badge>
                 </td>
                 <td className="px-4 py-3 text-right">

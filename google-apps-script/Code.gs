@@ -41,7 +41,7 @@
 
 // === Konfigurasi ===
 
-var SPREADSHEET_ID = '1Xjan2kKN0gpOXAb_cALqT6Eb1frv79NfS7LBh1WIk7o';
+var SPREADSHEET_ID = '1KKsrAxfSZ0XOLocHBg82eMZwtYeFtYF_1KTpTHXzz_8';
 var SHEET_NAME = 'DUK';
 
 var PERSURATAN_SPREADSHEET_ID = '17qiF2ZrxbrQrHopfVuaUFxKBfkS4YBqNiktS2Xm0UUg';
@@ -68,7 +68,12 @@ var LEAVE_COL_START = 45;
  * Kolom terakhir (1-indexed) yang dibutuhkan employees: kolom 39 (NPWP, 0-based=38).
  * Tidak perlu baca kolom 40-75+ untuk endpoint employees.
  */
-var EMPLOYEES_LAST_COL = 39;
+// Kolom terakhir untuk endpoint ?resource=employees (1-based).
+// Mencakup kolom AKTIF KERJA (2024..2033, JAN..DES) di kolom 77..196 (0-based 76..195).
+var AKTIF_YEARS = [2024, 2025, 2026, 2027, 2028, 2029, 2030, 2031, 2032, 2033];
+var AKTIF_COL_START = 76; // 0-based index untuk 2024 JAN
+var AKTIF_LAST_COL = 196; // 1-based index untuk 2033 DES
+var EMPLOYEES_LAST_COL = 196;
 
 /**
  * Kolom terakhir (1-indexed) yang dibutuhkan leave: kolom 75 (0-based=74,
@@ -161,7 +166,7 @@ function getAllDataCached_() {
  * Dipanggil hanya oleh getAllDataCached_().
  */
 function getAllData_() {
-  var rows = getDataRowsUpTo_(LEAVE_LAST_COL);
+  var rows = getDataRowsUpTo_(Math.max(LEAVE_LAST_COL, AKTIF_LAST_COL));
   return {
     employees: buildEmployees_(rows),
     leave: buildLeaveRecords_(rows)
@@ -173,6 +178,28 @@ function getAllData_() {
 function getEmployees_() {
   var rows = getDataRowsUpTo_(EMPLOYEES_LAST_COL);
   return buildEmployees_(rows);
+}
+
+function getCurrentYearMonth_() {
+  var parts = Utilities.formatDate(new Date(), 'Asia/Jakarta', 'yyyy-MM').split('-');
+  return {
+    year: parseInt(parts[0], 10),
+    month: parseInt(parts[1], 10) - 1
+  };
+}
+
+function getStatusAktif_(r, ym) {
+  var yearIdx = AKTIF_YEARS.indexOf(ym.year);
+  if (yearIdx === -1) {
+    if (ym.year < AKTIF_YEARS[0]) return true;
+    yearIdx = AKTIF_YEARS.length - 1;
+    ym = { year: AKTIF_YEARS[yearIdx], month: 11 };
+  }
+  var colIdx = AKTIF_COL_START + yearIdx * 12 + ym.month;
+  var val = r[colIdx];
+  if (val === true || val === 1) return true;
+  var str = String(val === null || val === undefined ? '' : val).trim().toLowerCase();
+  return str === 'true' || str === '1';
 }
 
 function buildEmployees_(rows) {
@@ -233,10 +260,8 @@ function buildEmployees_(rows) {
       namaRekening:           toString_(r[35]),
       noRekening:             toString_(r[36]),
       bank:                   toString_(r[37]),
-      npwp:                   toString_(r[38])
-
-      // statusAktif tidak ada di spreadsheet.
-      // Client remoteDataSource.ts akan men-default-kannya true.
+      npwp:                   toString_(r[38]),
+      statusAktif:            getStatusAktif_(r, getCurrentYearMonth_())
     });
   }
 

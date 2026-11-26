@@ -114,6 +114,7 @@ export default defineConfig(({ mode }) => {
                           jenisKelamin: row.jenisKelamin,
                           tanggalLahir: row.tanggalLahir,
                           tingkatPendidikan: row.tingkatPendidikan,
+                          statusAktif: row.statusAktif,
                         },
                   )
                   res.statusCode = 200

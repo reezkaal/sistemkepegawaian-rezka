@@ -67,7 +67,7 @@ export function usePersuratan(): UsePersuratanResult {
   }, [loadData])
 
   const kelompokOptions = useMemo(
-    () => Array.from(new Set(allData.map((n) => n.kelompokNaskah))).sort(),
+    () => Array.from(new Set(allData.map((n) => n.kelompokNaskah).filter(Boolean))).sort(),
     [allData],
   )
 

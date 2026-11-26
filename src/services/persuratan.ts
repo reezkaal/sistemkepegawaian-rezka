@@ -340,13 +340,13 @@ export function filterNaskah(data: NaskahItem[], filter: PersuratanFilter): Nask
   const typeNaskah = filter.typeNaskah.trim().toLowerCase()
 
   return data.filter((n) => {
-    if (uraian && !n.uraianInformasi.toLowerCase().includes(uraian)) return false
-    if (jenis && n.jenisNaskah.toLowerCase() !== jenis) return false
-    if (konseptor && !(n.konseptorOpr ?? '').toLowerCase().includes(konseptor)) return false
+    if (uraian && !String(n.uraianInformasi ?? '').toLowerCase().includes(uraian)) return false
+    if (jenis && String(n.jenisNaskah ?? '').toLowerCase() !== jenis) return false
+    if (konseptor && !String(n.konseptorOpr ?? '').toLowerCase().includes(konseptor)) return false
     if (filter.kelompokNaskah && n.kelompokNaskah !== filter.kelompokNaskah) return false
-    if (typeNaskah && (n.typeNaskah ?? '').toLowerCase() !== typeNaskah) return false
-    if (filter.tanggalMulai && n.tanggalNaskah && n.tanggalNaskah < filter.tanggalMulai) return false
-    if (filter.tanggalSelesai && n.tanggalNaskah && n.tanggalNaskah > filter.tanggalSelesai) return false
+    if (typeNaskah && String(n.typeNaskah ?? '').toLowerCase() !== typeNaskah) return false
+    if (filter.tanggalMulai && (!n.tanggalNaskah || n.tanggalNaskah < filter.tanggalMulai)) return false
+    if (filter.tanggalSelesai && (!n.tanggalNaskah || n.tanggalNaskah > filter.tanggalSelesai)) return false
     return true
   })
 }
@@ -355,8 +355,8 @@ export function filterNaskah(data: NaskahItem[], filter: PersuratanFilter): Nask
 export function countIncomplete(data: NaskahItem[]): number {
   return data.filter(
     (n) =>
-      !n.uraianInformasi.trim() ||
-      !n.jenisNaskah.trim() ||
+      !String(n.uraianInformasi ?? '').trim() ||
+      !String(n.jenisNaskah ?? '').trim() ||
       !n.tanggalNaskah,
   ).length
 }

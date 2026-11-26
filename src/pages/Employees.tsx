@@ -43,6 +43,7 @@ export default function Employees() {
   const [statusFilter, setStatusFilter] = useState('')
   const [satkerFilter, setSatkerFilter] = useState('')
   const [bidangFilter, setBidangFilter] = useState('')
+  const [aktifFilter, setAktifFilter] = useState('')
 
   const {
     isLoading,
@@ -62,7 +63,14 @@ export default function Employees() {
     summary,
     namaSortDirection,
     onToggleNamaSort,
-  } = useEmployeeList(namaQuery, nipQuery, satkerFilter, bidangFilter, statusFilter)
+  } = useEmployeeList(
+    namaQuery,
+    nipQuery,
+    satkerFilter,
+    bidangFilter,
+    statusFilter,
+    aktifFilter as '' | 'aktif' | 'tidak_aktif',
+  )
 
   // Format jam pembaruan terakhir (HH:mm:ss WIB)
   const formattedLastUpdated = lastUpdated
@@ -151,6 +159,8 @@ export default function Employees() {
             bidangFilter={bidangFilter}
             onBidangFilterChange={setBidangFilter}
             bidangOptions={bidangOptions}
+            aktifFilter={aktifFilter}
+            onAktifFilterChange={setAktifFilter}
           />
         </CardContent>
       </Card>

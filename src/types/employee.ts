@@ -103,4 +103,5 @@ export interface EmployeeListItem {
   satker: string
   bidangBagian?: string
   statusKepegawaian: StatusKepegawaian
+  statusAktif: boolean
 }

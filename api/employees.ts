@@ -76,6 +76,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
               jenisKelamin: row.jenisKelamin,
               tanggalLahir: row.tanggalLahir,
               tingkatPendidikan: row.tingkatPendidikan,
+              statusAktif: row.statusAktif,
             }
           })
         : data
