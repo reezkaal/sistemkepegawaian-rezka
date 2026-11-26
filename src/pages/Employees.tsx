@@ -23,20 +23,37 @@ function SummaryChip({
   onClick?: () => void
 }) {
   const toneStyles = {
-    violet: 'bg-violet/10 text-violet',
-    primary: 'bg-primary-soft text-primary',
-    success: 'bg-success/10 text-success',
-    muted: 'bg-muted text-muted-foreground',
-    amber: 'bg-amber/15 text-amber',
+    violet: {
+      icon: 'bg-violet/15 text-violet ring-1 ring-violet/20',
+      border: 'border-t-2 border-t-violet/70',
+    },
+    primary: {
+      icon: 'bg-primary/15 text-primary ring-1 ring-primary/20',
+      border: 'border-t-2 border-t-primary/70',
+    },
+    success: {
+      icon: 'bg-success/15 text-success ring-1 ring-success/20',
+      border: 'border-t-2 border-t-success/70',
+    },
+    muted: {
+      icon: 'bg-muted text-muted-foreground ring-1 ring-border',
+      border: 'border-t-2 border-t-muted-foreground/40',
+    },
+    amber: {
+      icon: 'bg-amber/15 text-amber ring-1 ring-amber/20',
+      border: 'border-t-2 border-t-amber/70',
+    },
   }[tone]
 
   const content = (
     <>
-      <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${toneStyles}`}>
+      <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${toneStyles.icon}`}>
         <Icon className="h-4 w-4" aria-hidden="true" />
       </div>
       <div className="min-w-0 text-left">
-        <p className="text-lg font-bold leading-none text-foreground">{value.toLocaleString('id-ID')}</p>
+        <p className="text-lg font-bold leading-none tabular-nums text-foreground">
+          {value.toLocaleString('id-ID')}
+        </p>
         <p className="mt-1 truncate text-xs text-muted-foreground">{label}</p>
       </div>
     </>
@@ -49,8 +66,9 @@ function SummaryChip({
         onClick={onClick}
         aria-pressed={active}
         className={cn(
-          'flex items-center gap-3 rounded-lg border bg-card px-4 py-3 transition-all cursor-pointer hover:border-primary/40 hover:bg-accent/40',
-          active ? 'border-primary ring-2 ring-primary/25' : 'border-border',
+          'flex items-center gap-3 rounded-xl border bg-card px-4 py-3 shadow-card transition-all cursor-pointer hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-card-hover',
+          toneStyles.border,
+          active ? 'border-primary ring-2 ring-primary/25' : 'border-border/90',
         )}
       >
         {content}
@@ -59,7 +77,12 @@ function SummaryChip({
   }
 
   return (
-    <div className="flex items-center gap-3 rounded-lg border border-border bg-card px-4 py-3">
+    <div
+      className={cn(
+        'flex items-center gap-3 rounded-xl border border-border/90 bg-card px-4 py-3 shadow-card',
+        toneStyles.border,
+      )}
+    >
       {content}
     </div>
   )

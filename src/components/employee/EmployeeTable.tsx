@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom'
-import { Users, ArrowUp, ArrowDown, ArrowUpDown } from 'lucide-react'
+import { Users, ArrowUp, ArrowDown, ArrowUpDown, ArrowRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import type { EmployeeListItem } from '@/types/employee'
@@ -22,7 +22,20 @@ function NamaSortIcon({ direction }: { direction: NamaSortDirection }) {
   return <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground/60" aria-hidden="true" />
 }
 
-const COLUMN_COUNT = 8
+const COLUMN_COUNT = 7
+
+function getInitials(nama: string): string {
+  const parts = nama.trim().split(/\s+/).filter(Boolean)
+  if (parts.length === 0) return '?'
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase()
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
+}
+
+function avatarTone(status: string): string {
+  if (status === 'PNS') return 'bg-primary/15 text-primary ring-1 ring-primary/20'
+  if (status === 'PPPK') return 'bg-success/15 text-success ring-1 ring-success/20'
+  return 'bg-amber/15 text-amber ring-1 ring-amber/20'
+}
 
 /** Warna badge Status Kepegawaian - solid, tanpa gradient (lihat CLAUDE.md § 4). */
 function statusTone(status: string): 'secondary' | 'success' | 'warning' {
@@ -54,7 +67,7 @@ export default function EmployeeTable({
 
   return (
     <div className="overflow-x-auto">
-      <table className="w-full min-w-[820px] border-collapse text-left text-sm">
+      <table className="w-full min-w-[780px] border-collapse text-left text-sm">
         <thead>
           <tr className="border-b border-border bg-muted/60 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
             <th scope="col" className="px-4 py-3">
@@ -66,12 +79,9 @@ export default function EmployeeTable({
                 }`}
                 aria-label={`Urutkan berdasarkan Nama ${namaSortDirection === 'asc' ? '(A-Z, klik untuk Z-A)' : namaSortDirection === 'desc' ? '(Z-A, klik untuk urutan default)' : '(urutan default, klik untuk A-Z)'}`}
               >
-                Nama
+                Pegawai
                 <NamaSortIcon direction={namaSortDirection} />
               </button>
-            </th>
-            <th scope="col" className="px-4 py-3">
-              NIP
             </th>
             <th scope="col" className="px-4 py-3">
               Jabatan
@@ -128,8 +138,22 @@ export default function EmployeeTable({
                 key={`${employee.nip || 'no-nip'}-${employee.nama}`}
                 className="transition-colors odd:bg-card even:bg-muted/40 hover:bg-primary-soft/50"
               >
-                <td className="px-4 py-3 font-medium text-foreground">{employee.nama}</td>
-                <td className="px-4 py-3 text-muted-foreground">{employee.nip}</td>
+                <td className="px-4 py-3">
+                  <div className="flex items-center gap-3">
+                    <div
+                      className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-xs font-semibold ${avatarTone(employee.statusKepegawaian)}`}
+                      aria-hidden="true"
+                    >
+                      {getInitials(employee.nama)}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="truncate font-medium text-foreground">{employee.nama}</p>
+                      <p className="mt-0.5 text-xs tabular-nums text-muted-foreground">
+                        {employee.nip || 'NIP belum tercatat'}
+                      </p>
+                    </div>
+                  </div>
+                </td>
                 <td className="px-4 py-3 text-muted-foreground">{employee.jabatan ?? '-'}</td>
                 <td className="px-4 py-3 text-muted-foreground">{employee.golongan ?? '-'}</td>
                 <td className="px-4 py-3 text-muted-foreground">{employee.satker || '-'}</td>
@@ -149,7 +173,7 @@ export default function EmployeeTable({
                       <span className="max-w-[230px] text-[11px] leading-snug text-muted-foreground">
                         {employee.aktifBulanCount > 0 &&
                         (employee.aktifPeriode || (employee.aktifMulai && employee.aktifSampai))
-                          ? `${employee.aktifBulanCount} bln (${employee.aktifPeriode ?? `${employee.aktifMulai} – ${employee.aktifSampai}`})`
+                          ? `${employee.aktifBulanCount} bln · ${employee.aktifPeriode ?? `${employee.aktifMulai} – ${employee.aktifSampai}`}`
                           : `${employee.aktifBulanCount} bln`}
                       </span>
                     )}
@@ -162,7 +186,8 @@ export default function EmployeeTable({
                     size="sm"
                     onClick={() => navigate(`/pegawai/${employee.nip}`)}
                   >
-                    Lihat Detail
+                    Detail
+                    <ArrowRight className="ml-1 h-3.5 w-3.5" aria-hidden="true" />
                   </Button>
                 </td>
               </tr>
