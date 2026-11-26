@@ -130,6 +130,15 @@ export default function PendidikanChart({ data, isLoading, totalPegawai }: Props
 
   const yDomain: [number, number] = [0, Math.ceil(maxVal * 1.3)]
 
+  const PENDIDIKAN_GRADS = [
+    'url(#pendGradIndigo)',
+    'url(#pendGradPrimary)',
+    'url(#pendGradCyan)',
+    'url(#pendGradTeal)',
+    'url(#pendGradViolet)',
+    'url(#pendGradAmber)',
+  ]
+
   return (
     <Card>
       <CardHeader className="pb-2">
@@ -137,7 +146,7 @@ export default function PendidikanChart({ data, isLoading, totalPegawai }: Props
           <div>
             <CardTitle className="text-sm font-semibold">Distribusi Pendidikan</CardTitle>
             <CardDescription className="mt-0.5 text-xs">
-              {terisi} dari {total} pegawai memiliki data pendidikan · abu-abu = belum terisi
+              Jumlah pegawai per jenjang pendidikan ({terisi} dari {total} pegawai)
             </CardDescription>
           </div>
           <span className="shrink-0 rounded-md bg-indigo/10 px-2 py-1 text-xs font-semibold text-indigo">
@@ -157,6 +166,32 @@ export default function PendidikanChart({ data, isLoading, totalPegawai }: Props
               margin={{ top: 16, right: 12, left: 0, bottom: 60 }}
               barCategoryGap="28%"
             >
+              <defs>
+                <linearGradient id="pendGradIndigo" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="hsl(var(--indigo))" stopOpacity={1} />
+                  <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={0.75} />
+                </linearGradient>
+                <linearGradient id="pendGradPrimary" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={1} />
+                  <stop offset="100%" stopColor="hsl(var(--cyan))" stopOpacity={0.78} />
+                </linearGradient>
+                <linearGradient id="pendGradCyan" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="hsl(var(--cyan))" stopOpacity={1} />
+                  <stop offset="100%" stopColor="hsl(var(--teal))" stopOpacity={0.78} />
+                </linearGradient>
+                <linearGradient id="pendGradTeal" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="hsl(var(--teal))" stopOpacity={1} />
+                  <stop offset="100%" stopColor="hsl(var(--success))" stopOpacity={0.78} />
+                </linearGradient>
+                <linearGradient id="pendGradViolet" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="hsl(var(--violet))" stopOpacity={1} />
+                  <stop offset="100%" stopColor="hsl(var(--pink))" stopOpacity={0.78} />
+                </linearGradient>
+                <linearGradient id="pendGradAmber" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="hsl(var(--amber))" stopOpacity={1} />
+                  <stop offset="100%" stopColor="hsl(var(--orange))" stopOpacity={0.78} />
+                </linearGradient>
+              </defs>
               <CartesianGrid vertical={false} stroke="hsl(var(--border))" strokeDasharray="3 3" />
               <XAxis
                 dataKey="tingkat"
@@ -176,7 +211,7 @@ export default function PendidikanChart({ data, isLoading, totalPegawai }: Props
               <Tooltip content={<CustomTooltip />} cursor={{ fill: 'hsl(var(--accent))' }} />
               <Bar
                 dataKey="jumlah"
-                radius={[4, 4, 0, 0]}
+                radius={[6, 6, 0, 0]}
                 maxBarSize={40}
                 isAnimationActive={true}
                 animationDuration={600}
@@ -187,8 +222,8 @@ export default function PendidikanChart({ data, isLoading, totalPegawai }: Props
                     key={index}
                     fill={
                       d.tingkat === '(Belum Terisi)'
-                        ? 'hsl(var(--muted-foreground) / 0.35)'
-                        : 'hsl(var(--indigo))'
+                        ? 'hsl(var(--muted-foreground) / 0.3)'
+                        : PENDIDIKAN_GRADS[index % PENDIDIKAN_GRADS.length]
                     }
                   />
                 ))}

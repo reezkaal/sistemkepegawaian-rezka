@@ -25,7 +25,7 @@
  */
 
 import { Link } from 'react-router-dom'
-import { Users, ShieldCheck, Briefcase, HelpCircle, CalendarDays, FileText, Calendar, ArrowUpRight } from 'lucide-react'
+import { Users, ShieldCheck, Briefcase, CalendarDays, FileText, Calendar, ArrowUpRight } from 'lucide-react'
 import StatCard, { StatCardSkeleton } from '@/components/dashboard/StatCard'
 import EmployeeQuickSearch from '@/components/dashboard/EmployeeQuickSearch'
 import StatusKepegawaianChart from '@/components/dashboard/StatusKepegawaianChart'
@@ -103,11 +103,6 @@ export default function Dashboard() {
     MAX_ORG_CHART_HEIGHT,
   )
 
-  // KPI OS (Outsourcing) = sisa dari total pegawai aktif yang bukan PNS/PPPK
-  const totalOS = summary
-    ? Math.max(0, summary.totalPegawai - summary.totalPNS - summary.totalPPPK)
-    : 0
-
   return (
     <div className="space-y-6">
       {/* ── Zone 1: Hero — Personal Greeting + Glass Quick Bar ───── */}
@@ -175,12 +170,11 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* ── Zone 2: KPI Row — 4 cards ─────────────────────────────── */}
+      {/* ── Zone 2: KPI Row — 3 cards ─────────────────────────────── */}
       <section aria-label="Ringkasan kepegawaian">
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           {summaryLoading || !summary ? (
             <>
-              <StatCardSkeleton />
               <StatCardSkeleton />
               <StatCardSkeleton />
               <StatCardSkeleton />
@@ -205,13 +199,6 @@ export default function Dashboard() {
                 icon={Briefcase}
                 tone="success"
               />
-              <StatCard
-                label="OS (Outsourcing)"
-                value={totalOS}
-                icon={HelpCircle}
-                tone="amber"
-                hint="Pegawai aktif non-PNS/PPPK"
-              />
             </>
           )}
         </div>
@@ -221,7 +208,7 @@ export default function Dashboard() {
       <section className="space-y-3" aria-label="Distribusi golongan">
         <SectionHeading
           title="Distribusi Golongan"
-          description="Seluruh kategori golongan aktual dari spreadsheet DUK"
+          description="Jumlah pegawai per golongan dan pangkat"
         />
         <GolonganChart
           data={golonganData}
@@ -305,7 +292,10 @@ export default function Dashboard() {
 
       {/* ── Zone 7: Tools — Cuti + Cari Pegawai ──────────────────── */}
       <section className="space-y-3" aria-label="Cuti dan pencarian">
-        <SectionHeading title="Cuti & Pencarian" />
+        <SectionHeading
+          title="Cuti & Pencarian"
+          description="Ringkasan cuti tahunan dan pencarian cepat pegawai"
+        />
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
           <CutiSummaryCard
             data={leaveYearSummary}

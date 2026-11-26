@@ -141,6 +141,16 @@ export default function GolonganChart({ data, isLoading }: Props) {
 
   const yDomain: [number, number] = [0, Math.ceil(maxVal * 1.3)]
 
+  function getGolonganFill(golongan: string): string {
+    if (golongan === '(Belum Terisi)') return 'hsl(var(--muted-foreground) / 0.3)'
+    const roman = golongan.split('/')[0]?.trim().toUpperCase()
+    if (roman === 'I') return 'url(#golGradTeal)'
+    if (roman === 'II') return 'url(#golGradCyan)'
+    if (roman === 'III') return 'url(#golGradAmber)'
+    if (roman === 'IV') return 'url(#golGradOrange)'
+    return 'url(#golGradIndigo)'
+  }
+
   return (
     <Card>
       <CardHeader className="pb-2">
@@ -148,7 +158,7 @@ export default function GolonganChart({ data, isLoading }: Props) {
           <div>
             <CardTitle className="text-sm font-semibold">Distribusi Golongan</CardTitle>
             <CardDescription className="mt-0.5 text-xs">
-              {terisi} dari {total} pegawai memiliki data golongan · abu-abu = belum terisi
+              Jumlah pegawai per kategori golongan ({terisi} dari {total} pegawai)
             </CardDescription>
           </div>
           <span className="shrink-0 rounded-md bg-amber/10 px-2 py-1 text-xs font-semibold text-amber">
@@ -168,6 +178,28 @@ export default function GolonganChart({ data, isLoading }: Props) {
               margin={{ top: 16, right: 12, left: 0, bottom: 60 }}
               barCategoryGap="28%"
             >
+              <defs>
+                <linearGradient id="golGradTeal" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="hsl(var(--teal))" stopOpacity={1} />
+                  <stop offset="100%" stopColor="hsl(var(--teal))" stopOpacity={0.68} />
+                </linearGradient>
+                <linearGradient id="golGradCyan" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="hsl(var(--cyan))" stopOpacity={1} />
+                  <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={0.78} />
+                </linearGradient>
+                <linearGradient id="golGradAmber" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="hsl(var(--amber))" stopOpacity={1} />
+                  <stop offset="100%" stopColor="hsl(var(--orange))" stopOpacity={0.78} />
+                </linearGradient>
+                <linearGradient id="golGradOrange" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="hsl(var(--orange))" stopOpacity={1} />
+                  <stop offset="100%" stopColor="hsl(var(--destructive))" stopOpacity={0.82} />
+                </linearGradient>
+                <linearGradient id="golGradIndigo" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="hsl(var(--indigo))" stopOpacity={1} />
+                  <stop offset="100%" stopColor="hsl(var(--violet))" stopOpacity={0.78} />
+                </linearGradient>
+              </defs>
               <CartesianGrid
                 vertical={false}
                 stroke="hsl(var(--border))"
@@ -191,21 +223,14 @@ export default function GolonganChart({ data, isLoading }: Props) {
               <Tooltip content={<CustomTooltip />} cursor={{ fill: 'hsl(var(--accent))' }} />
               <Bar
                 dataKey="jumlah"
-                radius={[4, 4, 0, 0]}
+                radius={[6, 6, 0, 0]}
                 maxBarSize={40}
                 isAnimationActive={true}
                 animationDuration={600}
                 animationEasing="ease-out"
               >
                 {sorted.map((d, index) => (
-                  <Cell
-                    key={index}
-                    fill={
-                      d.golongan === '(Belum Terisi)'
-                        ? 'hsl(var(--muted-foreground) / 0.35)'
-                        : 'hsl(var(--amber))'
-                    }
-                  />
+                  <Cell key={index} fill={getGolonganFill(d.golongan)} />
                 ))}
                 <LabelList
                   dataKey="jumlah"

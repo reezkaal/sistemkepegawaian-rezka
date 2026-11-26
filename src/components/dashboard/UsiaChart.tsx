@@ -1,4 +1,4 @@
-﻿/**
+/**
  * UsiaChart - Distribusi Kelompok Usia Pegawai.
  * Dihitung dari field tanggalLahir.
  * 5 kelompok: <30 / 30-39 / 40-49 / 50-59 / 60+.
@@ -43,16 +43,16 @@ interface TooltipState {
 
 const MUTED_KELOMPOK = "(Belum Terisi)"
 
-/**
- * Shade violet berbeda per kelompok usia — dari paling muda (paling terang)
- * ke paling tua (paling pekat), diskalakan otomatis terhadap jumlah kelompok
- * agar tetap konsisten walau jumlah kelompok berubah di masa depan.
- */
-function violetShadeOpacity(index: number, total: number) {
-  if (total <= 1) return 1
-  const min = 0.45
-  const max = 1
-  return min + (index / (total - 1)) * (max - min)
+const USIA_GRADIENTS = [
+  'linear-gradient(90deg, hsl(var(--cyan)), hsl(var(--teal)))',
+  'linear-gradient(90deg, hsl(var(--teal)), hsl(var(--success)))',
+  'linear-gradient(90deg, hsl(var(--primary)), hsl(var(--indigo)))',
+  'linear-gradient(90deg, hsl(var(--indigo)), hsl(var(--violet)))',
+  'linear-gradient(90deg, hsl(var(--violet)), hsl(var(--pink)))',
+]
+
+function usiaBarGradient(index: number) {
+  return USIA_GRADIENTS[index % USIA_GRADIENTS.length]
 }
 
 const TOOLTIP_STYLE: React.CSSProperties = {
@@ -122,17 +122,16 @@ export default function UsiaChart({ data, isLoading, dataValid, totalPegawai }: 
                   </span>
                   <div className="flex flex-1 items-center gap-2">
                     <div
-                      className="overflow-hidden rounded-sm bg-accent"
+                      className="overflow-hidden rounded-md bg-accent/80"
                       style={{ flex: 1, height: 22 }}
                     >
                       <div
-                        className="h-full rounded-sm transition-all duration-700 ease-out"
+                        className="h-full rounded-md transition-all duration-700 ease-out"
                         style={{
                           width: `${barWidth}%`,
                           background: isMuted
-                            ? 'hsl(var(--muted-foreground) / 0.4)'
-                            : 'hsl(var(--violet))',
-                          opacity: isMuted ? 1 : violetShadeOpacity(index, data.length),
+                            ? 'hsl(var(--muted-foreground) / 0.35)'
+                            : usiaBarGradient(index),
                         }}
                       />
                     </div>

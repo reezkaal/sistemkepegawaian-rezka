@@ -44,12 +44,7 @@ export default function Header({ onToggleMobileNav }: HeaderProps) {
             />
           </div>
           <div className="leading-tight">
-            <div className="flex items-center gap-2">
-              <p className="text-sm font-bold tracking-tight text-foreground">SIMPEG PPSDMPU</p>
-              <span className="hidden rounded-md bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold text-primary ring-1 ring-primary/20 md:inline-block">
-                HRIS
-              </span>
-            </div>
+            <p className="text-sm font-bold tracking-tight text-foreground">SIMPEG PPSDMPU</p>
             <p className="hidden text-xs text-muted-foreground sm:block">
               Sistem Informasi Kepegawaian · Kemenhub RI
             </p>
