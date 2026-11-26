@@ -137,9 +137,18 @@ export default function EmployeeTable({
                   </Badge>
                 </td>
                 <td className="px-4 py-3">
-                  <Badge tone={employee.statusAktif ? 'success' : 'muted'}>
-                    {employee.statusAktif ? 'Aktif' : 'Tidak Aktif'}
-                  </Badge>
+                  <div className="flex flex-col items-start gap-1">
+                    <Badge tone={employee.statusAktif ? 'success' : 'muted'}>
+                      {employee.statusAktif ? 'Aktif' : 'Tidak Aktif'}
+                    </Badge>
+                    {typeof employee.aktifBulanCount === 'number' && (
+                      <span className="text-[11px] leading-tight text-muted-foreground whitespace-nowrap">
+                        {employee.aktifBulanCount > 0 && employee.aktifMulai && employee.aktifSampai
+                          ? `${employee.aktifBulanCount} bln (${employee.aktifMulai} – ${employee.aktifSampai})`
+                          : `${employee.aktifBulanCount} bln`}
+                      </span>
+                    )}
+                  </div>
                 </td>
                 <td className="px-4 py-3 text-right">
                   <Button

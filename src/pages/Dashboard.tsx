@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Dashboard SIMPEG PPSDMPU — Redesign Enterprise.
  *
  * Semua angka diturunkan dari data aktual GAS/Spreadsheet.
@@ -72,8 +72,8 @@ export default function Dashboard() {
     MAX_ORG_CHART_HEIGHT,
   )
 
-  // KPI Belum Terisi = sisa dari total yang bukan PNS/PPPK
-  const belumTerisi = summary
+  // KPI OS (Outsourcing) = sisa dari total pegawai aktif yang bukan PNS/PPPK
+  const totalOS = summary
     ? Math.max(0, summary.totalPegawai - summary.totalPNS - summary.totalPPPK)
     : 0
 
@@ -109,7 +109,7 @@ export default function Dashboard() {
           ) : (
             <>
               <StatCard
-                label="Total Pegawai"
+                label="Total Pegawai Aktif"
                 value={summary.totalPegawai}
                 icon={Users}
                 tone="violet"
@@ -127,11 +127,11 @@ export default function Dashboard() {
                 tone="success"
               />
               <StatCard
-                label="Belum Terisi"
-                value={belumTerisi}
+                label="OS (Outsourcing)"
+                value={totalOS}
                 icon={HelpCircle}
                 tone="amber"
-                hint="Status belum terisi di spreadsheet"
+                hint="Pegawai aktif non-PNS/PPPK"
               />
             </>
           )}

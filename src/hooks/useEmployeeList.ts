@@ -33,7 +33,7 @@ interface UseEmployeeListResult {
   totalPages: number
   setPage: (page: number) => void
   /** Ringkasan TIDAK terfilter (dihitung dari seluruh data), untuk summary strip halaman Pegawai. */
-  summary: { total: number; totalPNS: number; totalPPPK: number }
+  summary: { total: number; totalAktif: number; totalTidakAktif: number; totalPNS: number; totalPPPK: number }
   /** Arah sorting kolom Nama saat ini (`null` = belum di-sort). */
   namaSortDirection: NamaSortDirection
   /** Toggle sorting Nama: null -> asc -> desc -> null. */
@@ -192,13 +192,17 @@ export function useEmployeeList(
   // strip di atas tabel Pegawai. Murni turunan dari statusKepegawaian
   // yang sudah ada, bukan data baru.
   const summary = useMemo(() => {
+    let totalAktif = 0
+    let totalTidakAktif = 0
     let totalPNS = 0
     let totalPPPK = 0
     for (const e of allEmployees) {
+      if (e.statusAktif) totalAktif += 1
+      else totalTidakAktif += 1
       if (e.statusKepegawaian === 'PNS') totalPNS += 1
       else if (e.statusKepegawaian === 'PPPK') totalPPPK += 1
     }
-    return { total: allEmployees.length, totalPNS, totalPPPK }
+    return { total: allEmployees.length, totalAktif, totalTidakAktif, totalPNS, totalPPPK }
   }, [allEmployees])
 
   return {

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Users, ShieldCheck, Briefcase, RotateCw, AlertCircle, X } from 'lucide-react'
+import { Users, UserCheck, UserX, ShieldCheck, Briefcase, RotateCw, AlertCircle, X } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import EmployeeFilters from '@/components/employee/EmployeeFilters'
 import EmployeeTable from '@/components/employee/EmployeeTable'
@@ -12,27 +12,54 @@ function SummaryChip({
   label,
   value,
   tone,
+  active,
+  onClick,
 }: {
   icon: typeof Users
   label: string
   value: number
-  tone: 'violet' | 'primary' | 'success'
+  tone: 'violet' | 'primary' | 'success' | 'muted'
+  active?: boolean
+  onClick?: () => void
 }) {
   const toneStyles = {
     violet: 'bg-violet/10 text-violet',
     primary: 'bg-primary-soft text-primary',
     success: 'bg-success/10 text-success',
+    muted: 'bg-muted text-muted-foreground',
   }[tone]
 
-  return (
-    <div className="flex items-center gap-3 rounded-lg border border-border bg-card px-4 py-3">
+  const content = (
+    <>
       <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${toneStyles}`}>
         <Icon className="h-4 w-4" aria-hidden="true" />
       </div>
-      <div className="min-w-0">
+      <div className="min-w-0 text-left">
         <p className="text-lg font-bold leading-none text-foreground">{value.toLocaleString('id-ID')}</p>
         <p className="mt-1 truncate text-xs text-muted-foreground">{label}</p>
       </div>
+    </>
+  )
+
+  if (onClick) {
+    return (
+      <button
+        type="button"
+        onClick={onClick}
+        aria-pressed={active}
+        className={cn(
+          'flex items-center gap-3 rounded-lg border bg-card px-4 py-3 transition-all cursor-pointer hover:border-primary/40 hover:bg-accent/40',
+          active ? 'border-primary ring-2 ring-primary/25' : 'border-border',
+        )}
+      >
+        {content}
+      </button>
+    )
+  }
+
+  return (
+    <div className="flex items-center gap-3 rounded-lg border border-border bg-card px-4 py-3">
+      {content}
     </div>
   )
 }
@@ -136,9 +163,25 @@ export default function Employees() {
         </div>
       )}
 
-      {/* Summary kecil: Total Pegawai, PNS, PPPK (brief redesign § 5) */}
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+      {/* Summary kecil: Total Pegawai, Aktif, Tidak Aktif, PNS, PPPK */}
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
         <SummaryChip icon={Users} label="Total Pegawai" value={summary.total} tone="violet" />
+        <SummaryChip
+          icon={UserCheck}
+          label="Pegawai Aktif"
+          value={summary.totalAktif}
+          tone="success"
+          active={aktifFilter === 'aktif'}
+          onClick={() => setAktifFilter((prev) => (prev === 'aktif' ? '' : 'aktif'))}
+        />
+        <SummaryChip
+          icon={UserX}
+          label="Tidak Aktif"
+          value={summary.totalTidakAktif}
+          tone="muted"
+          active={aktifFilter === 'tidak_aktif'}
+          onClick={() => setAktifFilter((prev) => (prev === 'tidak_aktif' ? '' : 'tidak_aktif'))}
+        />
         <SummaryChip icon={ShieldCheck} label="Pegawai PNS" value={summary.totalPNS} tone="primary" />
         <SummaryChip icon={Briefcase} label="Pegawai PPPK" value={summary.totalPPPK} tone="success" />
       </div>

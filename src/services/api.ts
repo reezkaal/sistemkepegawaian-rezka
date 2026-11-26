@@ -96,6 +96,9 @@ function toEmployeeListItem(e: Employee): EmployeeListItem {
     bidangBagian: e.bidangBagian,
     statusKepegawaian: e.statusKepegawaian,
     statusAktif: e.statusAktif,
+    aktifBulanCount: e.aktifBulanCount,
+    aktifMulai: e.aktifMulai,
+    aktifSampai: e.aktifSampai,
   }
 }
 
@@ -180,7 +183,7 @@ export async function getLeaveHistoryByNip(nip: string): Promise<LeaveHistoryEnt
  * karena tidak didukung data spreadsheet.
  */
 export async function getDashboardSummary(): Promise<DashboardSummary> {
-  const employees = await getRawEmployees()
+  const employees = (await getRawEmployees()).filter((e) => e.statusAktif)
   const totalPegawai = employees.length
   const totalPNS = employees.filter((e) => e.statusKepegawaian === 'PNS').length
   const totalPPPK = employees.filter((e) => e.statusKepegawaian === 'PPPK').length
@@ -240,8 +243,9 @@ export async function getLeaveTypeSummary(): Promise<LeaveTypeSummaryItem[]> {
  * di spreadsheet, bukan kategori substantif.
  */
 export async function getEmployeeChartData(): Promise<EmployeeChartData> {
-  const employees = await getRawEmployees()
+  const employees = (await getRawEmployees()).filter((e) => e.statusAktif)
   const total = employees.length
+  const pct = (jumlah: number) => (total > 0 ? Math.round((jumlah / total) * 100) : 0)
 
   // Helper: hitung frekuensi, kosong/dash → "(Belum Terisi)"
   function countBy(fn: (e: Employee) => string | undefined): Record<string, number> {
@@ -264,7 +268,7 @@ export async function getEmployeeChartData(): Promise<EmployeeChartData> {
     .map(([status, jumlah]) => ({
       status,
       jumlah,
-      persentase: Math.round((jumlah / total) * 100),
+      persentase: pct(jumlah),
     }))
     .sort((a, b) => b.jumlah - a.jumlah)
 
@@ -292,7 +296,7 @@ export async function getEmployeeChartData(): Promise<EmployeeChartData> {
     .map(([tingkat, jumlah]) => ({
       tingkat,
       jumlah,
-      persentase: Math.round((jumlah / total) * 100),
+      persentase: pct(jumlah),
     }))
     .sort((a, b) => b.jumlah - a.jumlah)
 
@@ -308,7 +312,7 @@ export async function getEmployeeChartData(): Promise<EmployeeChartData> {
     .map(([label, jumlah]) => ({
       label,
       jumlah,
-      persentase: Math.round((jumlah / total) * 100),
+      persentase: pct(jumlah),
     }))
 
   // 7. Distribusi Usia dari tanggalLahir

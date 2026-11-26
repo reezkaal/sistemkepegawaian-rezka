@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Donut Chart — Distribusi Status Kepegawaian (PNS / PPPK / Belum Terisi).
  * "(Belum Terisi)" = field status kosong di spreadsheet, BUKAN pegawai nonaktif.
  * Warna mengikuti badge Status Kepegawaian di tabel Pegawai (lihat
@@ -31,7 +31,9 @@ function getColor(status: string, index: number) {
 }
 
 function displayLabel(status: string) {
-  return status === 'Tanpa Status' ? '(Belum Terisi)' : status
+  return status === 'Tanpa Status' || status === '(Belum Terisi)'
+    ? 'OS (Outsourcing)'
+    : status
 }
 
 interface Props {
@@ -66,7 +68,7 @@ function CustomTooltip({ active, payload }: CustomTooltipProps) {
       </p>
       {isBelumTerisi && (
         <p style={{ color: 'hsl(var(--muted-foreground))', marginTop: 6, fontSize: 11, lineHeight: 1.4 }}>
-          Belum terisi di spreadsheet. Bukan berarti nonaktif.
+          Pegawai non-PNS/PPPK (Outsourcing).
         </p>
       )}
     </div>

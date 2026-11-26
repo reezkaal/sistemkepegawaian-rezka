@@ -60,6 +60,9 @@ interface RemoteEmployeeRow {
   bank?: string
   npwp?: string
   statusAktif?: boolean
+  aktifBulanCount?: number
+  aktifMulai?: string
+  aktifSampai?: string
 }
 
 interface RemoteLeaveYearRow {
@@ -188,6 +191,9 @@ function mapRowToEmployee(row: RemoteEmployeeRow): Employee {
     bank: row.bank,
     npwp: row.npwp,
     statusAktif: row.statusAktif ?? true,
+    aktifBulanCount: row.aktifBulanCount,
+    aktifMulai: row.aktifMulai,
+    aktifSampai: row.aktifSampai,
   }
 }
 

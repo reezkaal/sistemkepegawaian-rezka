@@ -85,6 +85,9 @@ export interface Employee {
 
   // ── Status (dipertahankan dari Checkpoint 3B) ─────────────────────
   statusAktif: boolean
+  aktifBulanCount?: number
+  aktifMulai?: string
+  aktifSampai?: string
 }
 
 /**
@@ -104,4 +107,7 @@ export interface EmployeeListItem {
   bidangBagian?: string
   statusKepegawaian: StatusKepegawaian
   statusAktif: boolean
+  aktifBulanCount?: number
+  aktifMulai?: string
+  aktifSampai?: string
 }

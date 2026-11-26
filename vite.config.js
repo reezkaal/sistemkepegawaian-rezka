@@ -186,6 +186,9 @@ export default defineConfig(function (_a) {
                                                         tanggalLahir: row.tanggalLahir,
                                                         tingkatPendidikan: row.tingkatPendidikan,
                                                         statusAktif: row.statusAktif,
+                                                        aktifBulanCount: row.aktifBulanCount,
+                                                        aktifMulai: row.aktifMulai,
+                                                        aktifSampai: row.aktifSampai,
                                                     };
                                             });
                                             res.statusCode = 200;

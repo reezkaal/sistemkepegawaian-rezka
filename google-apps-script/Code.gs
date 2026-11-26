@@ -188,22 +188,56 @@ function getCurrentYearMonth_() {
   };
 }
 
-function getStatusAktif_(r, ym) {
-  var yearIdx = AKTIF_YEARS.indexOf(ym.year);
-  if (yearIdx === -1) {
-    if (ym.year < AKTIF_YEARS[0]) return true;
-    yearIdx = AKTIF_YEARS.length - 1;
-    ym = { year: AKTIF_YEARS[yearIdx], month: 11 };
-  }
-  var colIdx = AKTIF_COL_START + yearIdx * 12 + ym.month;
-  var val = r[colIdx];
+var AKTIF_MONTH_LABELS = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+
+function isAktifChecked_(val) {
   if (val === true || val === 1) return true;
   var str = String(val === null || val === undefined ? '' : val).trim().toLowerCase();
   return str === 'true' || str === '1';
 }
 
+function getAktifInfo_(r, ym) {
+  var aktifBulanCount = 0;
+  var aktifMulai;
+  var aktifSampai;
+
+  for (var y = 0; y < AKTIF_YEARS.length; y++) {
+    for (var m = 0; m < 12; m++) {
+      var idx = AKTIF_COL_START + y * 12 + m;
+      if (idx < r.length && isAktifChecked_(r[idx])) {
+        aktifBulanCount += 1;
+        var label = AKTIF_MONTH_LABELS[m] + ' ' + AKTIF_YEARS[y];
+        if (!aktifMulai) aktifMulai = label;
+        aktifSampai = label;
+      }
+    }
+  }
+
+  var yearIdx = AKTIF_YEARS.indexOf(ym.year);
+  var statusAktif = false;
+  if (yearIdx === -1) {
+    if (ym.year < AKTIF_YEARS[0]) {
+      statusAktif = true;
+    } else {
+      var lastCol = AKTIF_COL_START + (AKTIF_YEARS.length - 1) * 12 + 11;
+      statusAktif = lastCol < r.length && isAktifChecked_(r[lastCol]);
+    }
+  } else {
+    var curCol = AKTIF_COL_START + yearIdx * 12 + ym.month;
+    statusAktif = curCol < r.length && isAktifChecked_(r[curCol]);
+  }
+
+  return {
+    statusAktif: statusAktif,
+    aktifBulanCount: aktifBulanCount,
+    aktifMulai: aktifMulai,
+    aktifSampai: aktifSampai
+  };
+}
+
 function buildEmployees_(rows) {
   var result = [];
+  var ym = getCurrentYearMonth_();
 
   for (var i = 0; i < rows.length; i++) {
     var r = rows[i];
@@ -213,6 +247,8 @@ function buildEmployees_(rows) {
 
     var nama = toString_(r[1]);
     if (!nama) continue;
+
+    var aktifInfo = getAktifInfo_(r, ym);
 
     result.push({
       // Identitas utama
@@ -261,7 +297,10 @@ function buildEmployees_(rows) {
       noRekening:             toString_(r[36]),
       bank:                   toString_(r[37]),
       npwp:                   toString_(r[38]),
-      statusAktif:            getStatusAktif_(r, getCurrentYearMonth_())
+      statusAktif:            aktifInfo.statusAktif,
+      aktifBulanCount:        aktifInfo.aktifBulanCount,
+      aktifMulai:             aktifInfo.aktifMulai,
+      aktifSampai:            aktifInfo.aktifSampai
     });
   }
 

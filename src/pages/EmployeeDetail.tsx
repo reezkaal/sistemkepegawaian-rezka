@@ -136,10 +136,25 @@ export default function EmployeeDetail() {
             {employee.jabatan && (
               <p className="mt-0.5 text-sm text-muted-foreground">{employee.jabatan}</p>
             )}
+            {typeof employee.aktifBulanCount === 'number' && (
+              <p className="mt-1.5 text-xs text-muted-foreground">
+                Masa Aktif Kantor:{' '}
+                <span className="font-medium text-foreground">
+                  {employee.aktifBulanCount > 0 && employee.aktifMulai && employee.aktifSampai
+                    ? `${employee.aktifBulanCount} bulan (${employee.aktifMulai} – ${employee.aktifSampai})`
+                    : `${employee.aktifBulanCount} bulan (belum ada centang aktif)`}
+                </span>
+              </p>
+            )}
           </div>
-          <Badge tone={employee.statusAktif ? 'success' : 'muted'}>
-            {employee.statusKepegawaian}
-          </Badge>
+          <div className="flex shrink-0 flex-wrap items-center gap-2">
+            <Badge tone={employee.statusAktif ? 'success' : 'muted'}>
+              {employee.statusAktif ? 'Aktif' : 'Tidak Aktif'}
+            </Badge>
+            <Badge tone={employee.statusKepegawaian === 'PNS' ? 'secondary' : 'success'}>
+              {employee.statusKepegawaian}
+            </Badge>
+          </div>
         </CardHeader>
       </Card>
 
