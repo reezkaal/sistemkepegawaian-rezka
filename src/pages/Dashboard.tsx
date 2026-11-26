@@ -24,7 +24,8 @@
  *   Gray/muted   → Belum Terisi (semua chart)
  */
 
-import { Users, ShieldCheck, Briefcase, HelpCircle } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import { Users, ShieldCheck, Briefcase, HelpCircle, CalendarDays, FileText, Calendar, ArrowUpRight } from 'lucide-react'
 import StatCard, { StatCardSkeleton } from '@/components/dashboard/StatCard'
 import EmployeeQuickSearch from '@/components/dashboard/EmployeeQuickSearch'
 import StatusKepegawaianChart from '@/components/dashboard/StatusKepegawaianChart'
@@ -36,6 +37,30 @@ import UsiaChart from '@/components/dashboard/UsiaChart'
 import GolonganChart from '@/components/dashboard/GolonganChart'
 import { useDashboardSummary } from '@/hooks/useDashboardSummary'
 import { useEmployeeCharts } from '@/hooks/useEmployeeCharts'
+import { useAuth } from '@/hooks/useAuth'
+
+function getGreetingWIB(): string {
+  const hourStr = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'Asia/Jakarta',
+    hour: 'numeric',
+    hour12: false,
+  }).format(new Date())
+  const hour = parseInt(hourStr, 10)
+  if (hour >= 4 && hour < 11) return 'Selamat Pagi'
+  if (hour >= 11 && hour < 15) return 'Selamat Siang'
+  if (hour >= 15 && hour < 18) return 'Selamat Sore'
+  return 'Selamat Malam'
+}
+
+function formatTodayWIB(): string {
+  return new Intl.DateTimeFormat('id-ID', {
+    timeZone: 'Asia/Jakarta',
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  }).format(new Date())
+}
 
 function SectionHeading({ title, description }: { title: string; description?: string }) {
   return (
@@ -49,8 +74,14 @@ function SectionHeading({ title, description }: { title: string; description?: s
 }
 
 export default function Dashboard() {
+  const { user, role } = useAuth()
   const { summary, leaveYearSummary, isLoading: summaryLoading, error } = useDashboardSummary()
   const { data: chartData, isLoading: chartLoading } = useEmployeeCharts()
+
+  const canAccessAdmin = role === 'superadmin' || role === 'admin'
+  const greeting = getGreetingWIB()
+  const todayLabel = formatTodayWIB()
+  const displayName = user?.displayName?.trim() || 'Pengguna'
 
   // Data chart — dari service, tidak ada filter/limit di sini
   const golonganData = chartData?.golongan ?? []
@@ -79,15 +110,63 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6">
-      {/* ── Zone 1: Page Header ─────────────────────────────────── */}
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight text-foreground">
-          Data Kepegawaian
-        </h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          PPSDMPU — Pusat Pengembangan Sumber Daya Manusia Perhubungan Udara
-        </p>
-      </div>
+      {/* ── Zone 1: Hero — Personal Greeting + Glass Quick Bar ───── */}
+      <section
+        aria-label="Sambutan dan akses cepat"
+        className="relative overflow-hidden rounded-2xl border border-border/80 bg-card/85 bg-gradient-to-br from-primary/[0.07] via-transparent to-cyan/[0.06] p-5 shadow-card backdrop-blur-md dark:bg-card/70 dark:from-primary/[0.14] dark:to-violet/[0.10] sm:p-6"
+      >
+        <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+          <div className="min-w-0">
+            <p className="text-sm font-semibold text-primary">
+              {greeting}, {displayName}
+            </p>
+            <h1 className="mt-1 text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
+              Data Kepegawaian
+            </h1>
+            <p className="mt-1 text-sm text-muted-foreground">
+              PPSDMPU — Pusat Pengembangan Sumber Daya Manusia Perhubungan Udara
+            </p>
+          </div>
+
+          <div className="flex flex-col items-start gap-2.5 lg:items-end">
+            <div className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+              <Calendar className="h-3.5 w-3.5 text-primary" aria-hidden="true" />
+              <span>{todayLabel}</span>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-1.5 rounded-xl border border-border/80 bg-background/65 p-1.5 shadow-sm backdrop-blur-md dark:bg-background/45">
+              {canAccessAdmin && (
+                <Link
+                  to="/pegawai"
+                  className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold text-foreground transition-all hover:bg-primary hover:text-primary-foreground active:scale-[0.98]"
+                >
+                  <Users className="h-3.5 w-3.5" aria-hidden="true" />
+                  <span>Pegawai</span>
+                  <ArrowUpRight className="h-3 w-3 opacity-70" aria-hidden="true" />
+                </Link>
+              )}
+              <Link
+                to="/cuti"
+                className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold text-foreground transition-all hover:bg-primary hover:text-primary-foreground active:scale-[0.98]"
+              >
+                <CalendarDays className="h-3.5 w-3.5" aria-hidden="true" />
+                <span>Cuti</span>
+                <ArrowUpRight className="h-3 w-3 opacity-70" aria-hidden="true" />
+              </Link>
+              {canAccessAdmin && (
+                <Link
+                  to="/persuratan"
+                  className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold text-foreground transition-all hover:bg-primary hover:text-primary-foreground active:scale-[0.98]"
+                >
+                  <FileText className="h-3.5 w-3.5" aria-hidden="true" />
+                  <span>Persuratan</span>
+                  <ArrowUpRight className="h-3 w-3 opacity-70" aria-hidden="true" />
+                </Link>
+              )}
+            </div>
+          </div>
+        </div>
+      </section>
 
       {/* ── Error global ──────────────────────────────────────────── */}
       {error && (
