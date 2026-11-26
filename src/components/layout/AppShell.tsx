@@ -30,7 +30,7 @@ export default function AppShell() {
   }
 
   return (
-    <div className="flex h-screen flex-col overflow-hidden bg-background">
+    <div className="app-canvas flex h-dvh flex-col overflow-hidden">
       {/* Header — tidak scroll, selalu di atas */}
       <Header onToggleMobileNav={() => setMobileNavOpen((v) => !v)} />
 
@@ -38,7 +38,7 @@ export default function AppShell() {
         {/* Sidebar desktop — sticky, hanya scroll sendiri jika kontennya panjang */}
         <aside
           className={cn(
-            'hidden shrink-0 overflow-y-auto border-r border-border bg-card transition-[width] duration-300 ease-in-out lg:block',
+            'hidden shrink-0 overflow-y-auto border-r border-border bg-card/90 backdrop-blur-md transition-[width] duration-300 ease-in-out dark:bg-card/70 lg:block',
             isCollapsed ? 'w-16' : 'w-64',
           )}
         >

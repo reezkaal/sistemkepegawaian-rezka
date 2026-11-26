@@ -84,7 +84,7 @@ export default function Header({ onToggleMobileNav }: HeaderProps) {
                 </div>
                 <p className="text-xs text-muted-foreground">{user.username}</p>
               </div>
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary-soft text-xs font-semibold text-primary-soft-foreground group-hover:ring-2 group-hover:ring-primary/40 transition-all">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/15 text-xs font-semibold text-primary ring-1 ring-primary/25 transition-all group-hover:ring-2 group-hover:ring-primary/45">
                 {initials}
               </div>
             </button>

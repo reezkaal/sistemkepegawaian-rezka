@@ -146,9 +146,10 @@ export default function EmployeeTable({
                       {employee.statusAktif ? 'Aktif' : 'Tidak Aktif'}
                     </Badge>
                     {typeof employee.aktifBulanCount === 'number' && (
-                      <span className="text-[11px] leading-tight text-muted-foreground whitespace-nowrap">
-                        {employee.aktifBulanCount > 0 && employee.aktifMulai && employee.aktifSampai
-                          ? `${employee.aktifBulanCount} bln (${employee.aktifMulai} – ${employee.aktifSampai})`
+                      <span className="max-w-[230px] text-[11px] leading-snug text-muted-foreground">
+                        {employee.aktifBulanCount > 0 &&
+                        (employee.aktifPeriode || (employee.aktifMulai && employee.aktifSampai))
+                          ? `${employee.aktifBulanCount} bln (${employee.aktifPeriode ?? `${employee.aktifMulai} – ${employee.aktifSampai}`})`
                           : `${employee.aktifBulanCount} bln`}
                       </span>
                     )}

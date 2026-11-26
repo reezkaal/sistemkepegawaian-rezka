@@ -80,6 +80,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
               aktifBulanCount: row.aktifBulanCount,
               aktifMulai: row.aktifMulai,
               aktifSampai: row.aktifSampai,
+              aktifPeriode: row.aktifPeriode,
             }
           })
         : data

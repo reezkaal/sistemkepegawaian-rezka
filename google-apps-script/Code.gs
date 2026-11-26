@@ -200,18 +200,32 @@ function getAktifInfo_(r, ym) {
   var aktifBulanCount = 0;
   var aktifMulai;
   var aktifSampai;
+  var segments = [];
+  var segStart;
+  var segEnd;
 
   for (var y = 0; y < AKTIF_YEARS.length; y++) {
     for (var m = 0; m < 12; m++) {
       var idx = AKTIF_COL_START + y * 12 + m;
-      if (idx < r.length && isAktifChecked_(r[idx])) {
+      var checked = idx < r.length && isAktifChecked_(r[idx]);
+      if (checked) {
         aktifBulanCount += 1;
         var label = AKTIF_MONTH_LABELS[m] + ' ' + AKTIF_YEARS[y];
         if (!aktifMulai) aktifMulai = label;
         aktifSampai = label;
+        if (!segStart) segStart = label;
+        segEnd = label;
+      } else if (segStart) {
+        segments.push(segStart === segEnd ? segStart : segStart + ' – ' + segEnd);
+        segStart = undefined;
+        segEnd = undefined;
       }
     }
   }
+  if (segStart) {
+    segments.push(segStart === segEnd ? segStart : segStart + ' – ' + segEnd);
+  }
+  var aktifPeriode = segments.length > 0 ? segments.join(', ') : undefined;
 
   var yearIdx = AKTIF_YEARS.indexOf(ym.year);
   var statusAktif = false;
@@ -231,7 +245,8 @@ function getAktifInfo_(r, ym) {
     statusAktif: statusAktif,
     aktifBulanCount: aktifBulanCount,
     aktifMulai: aktifMulai,
-    aktifSampai: aktifSampai
+    aktifSampai: aktifSampai,
+    aktifPeriode: aktifPeriode
   };
 }
 
@@ -300,7 +315,8 @@ function buildEmployees_(rows) {
       statusAktif:            aktifInfo.statusAktif,
       aktifBulanCount:        aktifInfo.aktifBulanCount,
       aktifMulai:             aktifInfo.aktifMulai,
-      aktifSampai:            aktifInfo.aktifSampai
+      aktifSampai:            aktifInfo.aktifSampai,
+      aktifPeriode:           aktifInfo.aktifPeriode
     });
   }
 

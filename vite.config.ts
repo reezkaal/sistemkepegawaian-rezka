@@ -118,6 +118,7 @@ export default defineConfig(({ mode }) => {
                           aktifBulanCount: row.aktifBulanCount,
                           aktifMulai: row.aktifMulai,
                           aktifSampai: row.aktifSampai,
+                          aktifPeriode: row.aktifPeriode,
                         },
                   )
                   res.statusCode = 200

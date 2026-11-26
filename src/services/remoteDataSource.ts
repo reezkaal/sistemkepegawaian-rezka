@@ -63,6 +63,7 @@ interface RemoteEmployeeRow {
   aktifBulanCount?: number
   aktifMulai?: string
   aktifSampai?: string
+  aktifPeriode?: string
 }
 
 interface RemoteLeaveYearRow {
@@ -194,6 +195,7 @@ function mapRowToEmployee(row: RemoteEmployeeRow): Employee {
     aktifBulanCount: row.aktifBulanCount,
     aktifMulai: row.aktifMulai,
     aktifSampai: row.aktifSampai,
+    aktifPeriode: row.aktifPeriode,
   }
 }
 

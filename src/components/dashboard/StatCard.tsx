@@ -57,7 +57,7 @@ export default function StatCard({ label, value, icon: Icon, tone = 'primary', h
       <CardContent className="flex items-start justify-between gap-4 p-5 sm:p-5">
         <div className="min-w-0">
           <p className="truncate text-sm font-medium text-muted-foreground">{label}</p>
-          <p className="mt-2 text-[1.75rem] font-bold leading-none tracking-tight text-foreground">
+          <p className="mt-2 text-[1.75rem] font-bold leading-none tracking-tight text-foreground tabular-nums">
             {value.toLocaleString('id-ID')}
           </p>
           {hint && <p className="mt-2 truncate text-xs text-muted-foreground/85">{hint}</p>}

@@ -74,56 +74,59 @@
   }
 
   .dark {
-    /* ── Dark mode ─────────────────────────────────────────────────
-       Dark charcoal/slate, bukan pure black. */
-    --background: 222 47% 11%;         /* #0F172A */
-    --foreground: 210 40% 98%;         /* #F8FAFC */
+    /* ── Dark mode (deep obsidian-navy, bukan flat slate-900) ─────── */
+    --background: 224 38% 7%;          /* #0B0F19 */
+    --foreground: 213 32% 96%;         /* #F1F5F9 */
 
-    --card: 217 33% 17%;               /* #1E293B */
-    --card-foreground: 210 40% 98%;
+    --card: 222 32% 12%;               /* #151C2C */
+    --card-foreground: 213 32% 96%;
 
-    --primary: 226 68% 58%;            /* sedikit lebih terang agar kontras di gelap */
-    --primary-hover: 226 72% 66%;
+    --primary: 222 76% 62%;            /* #5580F2 */
+    --primary-hover: 222 82% 68%;
     --primary-foreground: 0 0% 100%;
-    --primary-soft: 226 38% 22%;
-    --primary-soft-foreground: 223 90% 82%;
+    --primary-soft: 224 44% 20%;
+    --primary-soft-foreground: 221 90% 82%;
 
-    --cyan: 189 80% 52%;
-    --cyan-foreground: 222 47% 11%;
-    --violet: 258 84% 74%;
-    --violet-foreground: 222 47% 11%;
-    --orange: 25 88% 60%;
-    --orange-foreground: 222 47% 11%;
-    --amber: 38 90% 55%;
-    --amber-foreground: 222 47% 11%;
-    --teal: 173 72% 44%;
-    --teal-foreground: 222 47% 11%;
-    --indigo: 239 76% 68%;
-    --indigo-foreground: 222 47% 11%;
-    --pink: 330 78% 68%;
-    --pink-foreground: 222 47% 11%;
+    --cyan: 189 78% 54%;
+    --cyan-foreground: 224 38% 7%;
+    --violet: 258 80% 72%;
+    --violet-foreground: 224 38% 7%;
+    --orange: 25 84% 58%;
+    --orange-foreground: 224 38% 7%;
+    --amber: 38 88% 56%;
+    --amber-foreground: 224 38% 7%;
+    --teal: 173 68% 46%;
+    --teal-foreground: 224 38% 7%;
+    --indigo: 239 74% 68%;
+    --indigo-foreground: 224 38% 7%;
+    --pink: 330 74% 68%;
+    --pink-foreground: 224 38% 7%;
 
-    --secondary: 216 33% 21%;          /* #243247 */
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 221 28% 17%;          /* #1F293D */
+    --secondary-foreground: 213 32% 96%;
 
-    --muted: 216 33% 21%;
-    --muted-foreground: 215 20% 65%;   /* #94A3B8 */
+    --muted: 221 26% 16%;
+    --muted-foreground: 216 18% 64%;   /* #94A3B8 */
 
-    --accent: 226 38% 22%;
-    --accent-foreground: 223 90% 82%;
+    --accent: 224 38% 20%;
+    --accent-foreground: 221 90% 84%;
 
-    --destructive: 0 79% 66%;
-    --destructive-foreground: 222 47% 11%;
+    --destructive: 0 76% 62%;
+    --destructive-foreground: 0 0% 100%;
 
-    --success: 160 64% 48%;
-    --success-foreground: 222 47% 11%;
+    --success: 160 66% 46%;
+    --success-foreground: 224 38% 7%;
 
-    --warning: 38 92% 58%;
-    --warning-foreground: 222 47% 11%;
+    --warning: 38 88% 56%;
+    --warning-foreground: 224 38% 7%;
 
-    --border: 215 25% 27%;             /* #334155 */
-    --input: 215 25% 27%;
-    --ring: 226 68% 58%;
+    --border: 220 24% 20%;             /* #263044 */
+    --input: 220 24% 22%;
+    --ring: 222 76% 62%;
+  }
+
+  html {
+    scroll-behavior: smooth;
   }
 
   * {
@@ -159,9 +162,43 @@
      seluruh interface. Transparansi + blur, bukan gradient. Memakai
      token --card agar otomatis menyesuaikan Light/Dark. */
   .glass-surface {
-    background-color: hsl(var(--card) / 0.75);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    background-color: hsl(var(--card) / 0.82);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+  }
+
+  .dark .glass-surface {
+    background-color: hsl(var(--card) / 0.72);
+    box-shadow: inset 0 -1px 0 0 rgb(255 255 255 / 0.04), 0 8px 24px -12px rgb(0 0 0 / 0.55);
+  }
+
+  .app-canvas {
+    background-color: hsl(var(--background));
+    background-image:
+      radial-gradient(ellipse 70% 50% at 15% -10%, hsl(var(--primary) / 0.06), transparent 65%),
+      radial-gradient(ellipse 50% 40% at 90% 10%, hsl(var(--cyan) / 0.04), transparent 60%);
+  }
+
+  .dark .app-canvas {
+    background-image:
+      radial-gradient(ellipse 65% 45% at 12% -5%, hsl(var(--primary) / 0.14), transparent 65%),
+      radial-gradient(ellipse 50% 40% at 88% 8%, hsl(var(--violet) / 0.09), transparent 60%),
+      radial-gradient(circle at 1px 1px, rgb(255 255 255 / 0.03) 1px, transparent 0);
+    background-size: auto, auto, 24px 24px;
+  }
+
+  .dark .shadow-card {
+    box-shadow:
+      inset 0 1px 0 0 rgb(255 255 255 / 0.06),
+      0 8px 24px -8px rgb(0 0 0 / 0.5),
+      0 2px 6px -2px rgb(0 0 0 / 0.35);
+  }
+
+  .dark .shadow-card-hover {
+    box-shadow:
+      inset 0 1px 0 0 rgb(255 255 255 / 0.1),
+      0 14px 32px -10px hsl(var(--primary) / 0.25),
+      0 4px 12px -2px rgb(0 0 0 / 0.5);
   }
 
   .scrollbar-none {

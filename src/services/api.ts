@@ -99,6 +99,7 @@ function toEmployeeListItem(e: Employee): EmployeeListItem {
     aktifBulanCount: e.aktifBulanCount,
     aktifMulai: e.aktifMulai,
     aktifSampai: e.aktifSampai,
+    aktifPeriode: e.aktifPeriode,
   }
 }
 
@@ -300,20 +301,19 @@ export async function getEmployeeChartData(): Promise<EmployeeChartData> {
     }))
     .sort((a, b) => b.jumlah - a.jumlah)
 
-  // 6. Gender — Laki-laki / Perempuan / (Belum Terisi)
-  const genderMap: Record<string, number> = { 'Laki-laki': 0, 'Perempuan': 0, '(Belum Terisi)': 0 }
+  // 6. Gender — Laki-laki / Perempuan (tanpa "(Belum Terisi)")
+  const genderMap: Record<string, number> = { 'Laki-laki': 0, 'Perempuan': 0 }
   for (const e of employees) {
     const jk = e.jenisKelamin?.trim()
     if (jk === 'L') genderMap['Laki-laki']++
     else if (jk === 'P') genderMap['Perempuan']++
-    else genderMap['(Belum Terisi)']++
   }
-  const gender = Object.entries(genderMap)
-    .map(([label, jumlah]) => ({
-      label,
-      jumlah,
-      persentase: pct(jumlah),
-    }))
+  const genderTotal = genderMap['Laki-laki'] + genderMap['Perempuan']
+  const gender = Object.entries(genderMap).map(([label, jumlah]) => ({
+    label,
+    jumlah,
+    persentase: genderTotal > 0 ? Math.round((jumlah / genderTotal) * 100) : 0,
+  }))
 
   // 7. Distribusi Usia dari tanggalLahir
   //    Pegawai tanpa tanggalLahir valid dikecualikan (dilaporkan via usiaDataValid).

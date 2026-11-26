@@ -88,6 +88,7 @@ export interface Employee {
   aktifBulanCount?: number
   aktifMulai?: string
   aktifSampai?: string
+  aktifPeriode?: string
 }
 
 /**
@@ -110,4 +111,5 @@ export interface EmployeeListItem {
   aktifBulanCount?: number
   aktifMulai?: string
   aktifSampai?: string
+  aktifPeriode?: string
 }

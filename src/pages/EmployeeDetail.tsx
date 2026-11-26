@@ -140,8 +140,9 @@ export default function EmployeeDetail() {
               <p className="mt-1.5 text-xs text-muted-foreground">
                 Masa Aktif Kantor:{' '}
                 <span className="font-medium text-foreground">
-                  {employee.aktifBulanCount > 0 && employee.aktifMulai && employee.aktifSampai
-                    ? `${employee.aktifBulanCount} bulan (${employee.aktifMulai} – ${employee.aktifSampai})`
+                  {employee.aktifBulanCount > 0 &&
+                  (employee.aktifPeriode || (employee.aktifMulai && employee.aktifSampai))
+                    ? `${employee.aktifBulanCount} bulan (${employee.aktifPeriode ?? `${employee.aktifMulai} – ${employee.aktifSampai}`})`
                     : `${employee.aktifBulanCount} bulan (belum ada centang aktif)`}
                 </span>
               </p>
