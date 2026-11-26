@@ -1,12 +1,9 @@
 /**
  * Tipe data untuk modul Persuratan.
  *
- * Struktur mengikuti kolom spreadsheet "naskahmsk-klr" PPSDMPU:
+ * Struktur mengikuti kolom spreadsheet "Persuratan" PPSDMPU:
  * No. Urut | Kelompok Naskah | Jenis Naskah | Sifat Naskah |
- * Uraian Informasi | Tanggal Diterima | Tanggal Naskah | Konseptor/OPR
- *
- * Integrasi GAS API belum tersedia — service layer mengembalikan status
- * "not_connected" sampai endpoint tersedia.
+ * Uraian Informasi | Tanggal Diterima | Tanggal Naskah | Type Naskah | Konseptor/OPR
  */
 
 export type KelompokNaskah = 'Naskah Keluar' | 'Naskah Masuk' | string
@@ -29,6 +26,15 @@ export const JENIS_NASKAH_OPTIONS = [
   'Surat Undangan',
   'Tanpa Nomor (TN)',
   'Perintah Lembur (SPKL)',
+  'Perjanjian Kerjasama (PJ)',
+  'Notulen Rapat (NR)',
+  'Telaah Staf',
+] as const
+
+export const TYPE_NASKAH_OPTIONS = [
+  'Konvensional',
+  'Elektronik',
+  'Srikandi',
 ] as const
 
 export interface NaskahItem {
@@ -38,10 +44,12 @@ export interface NaskahItem {
   jenisNaskah: string
   sifatNaskah: string
   uraianInformasi: string
-  /** ISO date string atau kosong. */
+  /** ISO date string (YYYY-MM-DD) atau null. */
   tanggalDiterima: string | null
-  /** ISO date string atau kosong. */
+  /** ISO date string (YYYY-MM-DD) atau null. */
   tanggalNaskah: string | null
+  /** Type naskah: Konvensional, Elektronik, Srikandi, atau null. */
+  typeNaskah: string | null
   konseptorOpr: string | null
 }
 
@@ -60,6 +68,7 @@ export interface PersuratanFilter {
   jenisNaskah: string
   searchKonseptor: string
   kelompokNaskah: string
+  typeNaskah: string
   tanggalMulai: string
   tanggalSelesai: string
 }
@@ -69,6 +78,7 @@ export const FILTER_DEFAULTS: PersuratanFilter = {
   jenisNaskah: '',
   searchKonseptor: '',
   kelompokNaskah: '',
+  typeNaskah: '',
   tanggalMulai: '',
   tanggalSelesai: '',
 }

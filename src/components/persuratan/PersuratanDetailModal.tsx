@@ -23,6 +23,7 @@ export default function PersuratanDetailModal({ item, open, onClose }: Props) {
     { label: 'No. Urut', value: String(item.noUrut) },
     { label: 'Kelompok Naskah', value: item.kelompokNaskah },
     { label: 'Jenis Naskah', value: item.jenisNaskah },
+    { label: 'Type Naskah', value: item.typeNaskah },
     { label: 'Sifat Naskah', value: item.sifatNaskah },
     { label: 'Tanggal Naskah', value: item.tanggalNaskah ? formatTanggal(item.tanggalNaskah) : null },
     { label: 'Tanggal Diterima', value: item.tanggalDiterima ? formatTanggal(item.tanggalDiterima) : null },

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { getNaskahList, filterNaskah, countIncomplete } from '@/services/persuratan'
 import type { NaskahItem, PersuratanFilter, DataSourceStatus } from '@/types/persuratan'
-import { FILTER_DEFAULTS, JENIS_NASKAH_OPTIONS } from '@/types/persuratan'
+import { FILTER_DEFAULTS, JENIS_NASKAH_OPTIONS, TYPE_NASKAH_OPTIONS } from '@/types/persuratan'
 
 const PAGE_SIZE = 15
 
@@ -27,9 +27,10 @@ interface UsePersuratanResult {
   setFilter: (f: PersuratanFilter) => void
   resetFilter: () => void
   summary: PersuratanSummary
-  /** Pilihan filter kelompok dan jenis naskah */
+  /** Pilihan filter kelompok, jenis, dan type naskah */
   kelompokOptions: string[]
   jenisOptions: string[]
+  typeOptions: string[]
 }
 
 export function usePersuratan(): UsePersuratanResult {
@@ -79,6 +80,14 @@ export function usePersuratan(): UsePersuratanResult {
     return Array.from(set)
   }, [allData])
 
+  const typeOptions = useMemo(() => {
+    const set = new Set<string>(TYPE_NASKAH_OPTIONS)
+    for (const item of allData) {
+      if (item.typeNaskah) set.add(item.typeNaskah)
+    }
+    return Array.from(set)
+  }, [allData])
+
   const filtered = useMemo(() => filterNaskah(allData, filter), [allData, filter])
 
   // Reset ke halaman 1 setiap filter berubah
@@ -116,5 +125,6 @@ export function usePersuratan(): UsePersuratanResult {
     summary,
     kelompokOptions,
     jenisOptions,
+    typeOptions,
   }
 }

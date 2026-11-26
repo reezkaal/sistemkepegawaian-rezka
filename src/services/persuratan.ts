@@ -1,30 +1,20 @@
 /**
  * Service layer untuk modul Persuratan.
  *
- * GAS API belum tersedia. Semua fungsi mengembalikan status
- * "not_connected" agar UI menampilkan empty state yang jelas.
- *
- * Untuk integrasi GAS API pada tahap berikutnya:
- * 1. Ganti konstanta GAS_ENDPOINT dengan URL GAS deployment.
- * 2. Ubah DATA_SOURCE menjadi 'remote'.
- * 3. Implementasikan fetchFromGas() sesuai format response GAS.
- * 4. Signature semua fungsi yang diekspor TIDAK perlu berubah —
- *    hook dan komponen tidak perlu dimodifikasi.
- *
- * Format response GAS yang diharapkan:
- * { status: 'ok', data: NaskahItem[] }
- * atau
- * { status: 'error', message: string }
+ * Mengikuti konfigurasi VITE_DATA_SOURCE ('mock' | 'remote'):
+ * - 'mock'   → menggunakan data contoh lokal (MOCK_DATA).
+ * - 'remote' → mengambil data asli dari Google Spreadsheet via /api/persuratan
+ *              (Vercel Serverless proxy ke Google Apps Script) dengan JWT Supabase.
  */
 
 import type { NaskahItem, PersuratanDataResult, PersuratanFilter } from '@/types/persuratan'
+import { supabase, isSupabaseConfigured } from '@/lib/supabase'
 
-// ponytail: ubah ke 'remote' dan isi GAS_ENDPOINT saat API tersedia
-const DATA_SOURCE: 'mock' | 'remote' = 'mock'
-const GAS_ENDPOINT = ''
+const DATA_SOURCE: 'mock' | 'remote' =
+  import.meta.env.VITE_DATA_SOURCE === 'remote' ? 'remote' : 'mock'
 
 /** Data contoh — hanya untuk preview tampilan. Bukan data aktual PPSDMPU. Seluruh sifat naskah bernilai "Biasa". */
-const MOCK_DATA: NaskahItem[] = [
+const MOCK_DATA_RAW: Array<Omit<NaskahItem, 'typeNaskah'>> = [
   {
     noUrut: 1,
     kelompokNaskah: 'Naskah Keluar',
@@ -277,24 +267,52 @@ const MOCK_DATA: NaskahItem[] = [
   },
 ]
 
+const MOCK_DATA: NaskahItem[] = MOCK_DATA_RAW.map((item) => ({
+  ...item,
+  typeNaskah: item.kelompokNaskah === 'Naskah Keluar' ? 'Konvensional' : null,
+}))
+
+async function getAuthHeaders(): Promise<HeadersInit> {
+  if (!isSupabaseConfigured) return {}
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session?.access_token) {
+    throw new Error('Sesi login tidak ditemukan. Silakan login kembali.')
+  }
+  return {
+    Authorization: `Bearer ${session.access_token}`,
+  }
+}
+
 /** Ambil semua naskah dari sumber data. */
 export async function getNaskahList(): Promise<PersuratanDataResult> {
   if (DATA_SOURCE === 'mock') {
-    // Simulasi delay seperti service lain di aplikasi ini
     await new Promise((r) => setTimeout(r, 300))
     return { status: 'connected', data: MOCK_DATA }
   }
 
-  if (!GAS_ENDPOINT) {
-    return { status: 'not_connected', data: [] }
-  }
-
   try {
-    const res = await fetch(`${GAS_ENDPOINT}?action=getNaskahList`)
-    if (!res.ok) throw new Error(`HTTP ${res.status}`)
-    const json = await res.json()
-    if (json.status !== 'ok') throw new Error(json.message ?? 'Unknown error')
-    return { status: 'connected', data: json.data as NaskahItem[] }
+    const headers = await getAuthHeaders()
+    const res = await fetch('/api/persuratan', { headers })
+    if (!res.ok) {
+      let msg = `HTTP ${res.status}`
+      try {
+        const errBody = await res.json() as { error?: string }
+        if (errBody.error) msg = errBody.error
+      } catch {
+        // ignore JSON parse error on error response
+      }
+      throw new Error(msg)
+    }
+
+    const json = await res.json() as unknown
+    if (Array.isArray(json)) {
+      return { status: 'connected', data: json as NaskahItem[] }
+    }
+    if (json && typeof json === 'object' && 'error' in json) {
+      const errObj = json as { error?: boolean; message?: string }
+      throw new Error(errObj.message ?? 'Gagal mengambil data persuratan.')
+    }
+    throw new Error('Format response persuratan tidak valid.')
   } catch (err) {
     return {
       status: 'error',
@@ -319,12 +337,14 @@ export function filterNaskah(data: NaskahItem[], filter: PersuratanFilter): Nask
   const uraian = filter.searchUraian.trim().toLowerCase()
   const konseptor = filter.searchKonseptor.trim().toLowerCase()
   const jenis = filter.jenisNaskah.trim().toLowerCase()
+  const typeNaskah = filter.typeNaskah.trim().toLowerCase()
 
   return data.filter((n) => {
     if (uraian && !n.uraianInformasi.toLowerCase().includes(uraian)) return false
     if (jenis && n.jenisNaskah.toLowerCase() !== jenis) return false
     if (konseptor && !(n.konseptorOpr ?? '').toLowerCase().includes(konseptor)) return false
     if (filter.kelompokNaskah && n.kelompokNaskah !== filter.kelompokNaskah) return false
+    if (typeNaskah && (n.typeNaskah ?? '').toLowerCase() !== typeNaskah) return false
     if (filter.tanggalMulai && n.tanggalNaskah && n.tanggalNaskah < filter.tanggalMulai) return false
     if (filter.tanggalSelesai && n.tanggalNaskah && n.tanggalNaskah > filter.tanggalSelesai) return false
     return true

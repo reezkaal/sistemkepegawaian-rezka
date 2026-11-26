@@ -229,6 +229,31 @@ export default defineConfig(function (_a) {
                 }); })
                     .catch(next);
             });
+            server.middlewares.use('/api/persuratan', function (req, res, next) {
+                verifyDevCaller(req.headers.authorization)
+                    .then(function (auth) { return __awaiter(_this, void 0, void 0, function () {
+                    var _a, status, body;
+                    return __generator(this, function (_b) {
+                        switch (_b.label) {
+                            case 0:
+                                if (!auth.ok) {
+                                    res.statusCode = auth.status;
+                                    res.setHeader('Content-Type', 'application/json');
+                                    res.end(auth.body);
+                                    return [2 /*return*/];
+                                }
+                                return [4 /*yield*/, proxyToGas('persuratan')];
+                            case 1:
+                                _a = _b.sent(), status = _a.status, body = _a.body;
+                                res.statusCode = status;
+                                res.setHeader('Content-Type', 'application/json');
+                                res.end(body);
+                                return [2 /*return*/];
+                        }
+                    });
+                }); })
+                    .catch(next);
+            });
             // Dev proxy untuk /api/auth/create-user
             server.middlewares.use('/api/auth/create-user', function (req, res, next) { return __awaiter(_this, void 0, void 0, function () {
                 var chunks, chunk, e_1_1, body, authHeader, createClient, callerToken, supabaseAnon, _a, callerUser, authErr, supaAdmin, profile, callerRole, email, password, nama, nip, role, _b, newUser, createErr, status_1, err_2;

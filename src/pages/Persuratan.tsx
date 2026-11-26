@@ -33,6 +33,7 @@ export default function Persuratan() {
     summary,
     kelompokOptions,
     jenisOptions,
+    typeOptions,
   } = usePersuratan()
 
   const startIndex = (page - 1) * PAGE_SIZE
@@ -119,6 +120,7 @@ export default function Persuratan() {
             onReset={resetFilter}
             kelompokOptions={kelompokOptions}
             jenisOptions={jenisOptions}
+            typeOptions={typeOptions}
           />
         </CardContent>
       </Card>

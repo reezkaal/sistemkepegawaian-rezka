@@ -25,6 +25,7 @@ function TableSkeleton() {
           <td className="px-2 py-2 text-center"><div className="mx-auto h-4 w-5 animate-pulse rounded bg-accent" /></td>
           <td className="px-2.5 py-2"><div className="h-5 w-20 animate-pulse rounded-full bg-accent" /></td>
           <td className="px-2.5 py-2"><div className="h-4 w-24 animate-pulse rounded bg-accent" /></td>
+          <td className="px-2 py-2"><div className="h-4 w-16 animate-pulse rounded bg-accent" /></td>
           <td className="px-2 py-2 text-center"><div className="mx-auto h-4 w-8 animate-pulse rounded bg-accent" /></td>
           <td className="px-2.5 py-2"><div className="h-4 w-full animate-pulse rounded bg-accent" /></td>
           <td className="px-2 py-2"><div className="h-4 w-16 animate-pulse rounded bg-accent" /></td>
@@ -65,28 +66,31 @@ export default function PersuratanTable({
               <th scope="col" className="w-[4%] px-2 py-3 text-center">
                 No.
               </th>
-              <th scope="col" className="w-[13%] px-2.5 py-3">
+              <th scope="col" className="w-[12%] px-2.5 py-3">
                 Kelompok
               </th>
-              <th scope="col" className="w-[15%] px-2.5 py-3">
+              <th scope="col" className="w-[14%] px-2.5 py-3">
                 Jenis Naskah
+              </th>
+              <th scope="col" className="w-[9%] px-2 py-3">
+                Type
               </th>
               <th scope="col" className="w-[6%] px-2 py-3 text-center">
                 Sifat
               </th>
-              <th scope="col" className="w-[23%] px-2.5 py-3">
+              <th scope="col" className="w-[21%] px-2.5 py-3">
                 Uraian Informasi
               </th>
-              <th scope="col" className="w-[9%] px-2 py-3 whitespace-nowrap">
+              <th scope="col" className="w-[8%] px-2 py-3 whitespace-nowrap">
                 Tgl Diterima
               </th>
-              <th scope="col" className="w-[9%] px-2 py-3 whitespace-nowrap">
+              <th scope="col" className="w-[8%] px-2 py-3 whitespace-nowrap">
                 Tgl Naskah
               </th>
-              <th scope="col" className="w-[13%] px-2.5 py-3">
+              <th scope="col" className="w-[12%] px-2.5 py-3">
                 Konseptor / OPR
               </th>
-              <th scope="col" className="w-[8%] px-2 py-3 text-center">
+              <th scope="col" className="w-[6%] px-2 py-3 text-center">
                 Aksi
               </th>
             </tr>
@@ -96,7 +100,7 @@ export default function PersuratanTable({
 
             {!isLoading && error && (
               <tr>
-                <td colSpan={9} className="px-4 py-12 text-center">
+                <td colSpan={10} className="px-4 py-12 text-center">
                   <div className="flex flex-col items-center justify-center gap-1.5 text-destructive">
                     <p className="text-sm font-semibold">Gagal memuat data persuratan</p>
                     <p className="text-xs text-muted-foreground">{error}</p>
@@ -107,7 +111,7 @@ export default function PersuratanTable({
 
             {!isLoading && !error && items.length === 0 && (
               <tr>
-                <td colSpan={9} className="px-4 py-12 text-center">
+                <td colSpan={10} className="px-4 py-12 text-center">
                   <div className="flex flex-col items-center justify-center gap-2 text-muted-foreground">
                     <div className="flex h-10 w-10 items-center justify-center rounded-full bg-secondary">
                       <InboxIcon className="h-5 w-5" aria-hidden="true" />
@@ -159,7 +163,7 @@ export default function PersuratanTable({
                       </Badge>
                     </td>
 
-                    {/* Jenis Naskah (15%) */}
+                    {/* Jenis Naskah (14%) */}
                     <td className="px-2.5 py-2">
                       <div className="flex items-center gap-1.5 min-w-0" title={item.jenisNaskah}>
                         <FileText className="h-3.5 w-3.5 shrink-0 text-muted-foreground/60" aria-hidden="true" />
@@ -167,6 +171,13 @@ export default function PersuratanTable({
                           {item.jenisNaskah || '-'}
                         </span>
                       </div>
+                    </td>
+
+                    {/* Type Naskah (9%) */}
+                    <td className="px-2 py-2 text-xs text-muted-foreground">
+                      <span className="truncate block" title={item.typeNaskah ?? undefined}>
+                        {item.typeNaskah || '-'}
+                      </span>
                     </td>
 
                     {/* Sifat (6%) */}

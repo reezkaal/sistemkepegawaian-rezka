@@ -7,6 +7,7 @@ interface Props {
   onReset: () => void
   kelompokOptions: string[]
   jenisOptions: string[]
+  typeOptions: string[]
 }
 
 const inputCls =
@@ -29,6 +30,7 @@ export default function PersuratanFilters({
   onReset,
   kelompokOptions,
   jenisOptions,
+  typeOptions,
 }: Props) {
   function set(key: keyof PersuratanFilter, value: string) {
     onChange({ ...filter, [key]: value })
@@ -128,8 +130,8 @@ export default function PersuratanFilters({
           </select>
         </div>
 
-        {/* Baris 2: Jenis Naskah Dropdown (2 kolom) */}
-        <div className="col-span-1 md:col-span-2 lg:col-span-2">
+        {/* Baris 2: Jenis Naskah Dropdown (1 kolom) */}
+        <div className="col-span-1 md:col-span-1 lg:col-span-1">
           <label htmlFor="f-jenis" className={labelCls}>
             Jenis Naskah
           </label>
@@ -143,6 +145,26 @@ export default function PersuratanFilters({
             {jenisOptions.map((j) => (
               <option key={j} value={j}>
                 {j}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Baris 2: Type Naskah Dropdown (1 kolom) */}
+        <div className="col-span-1 md:col-span-1 lg:col-span-1">
+          <label htmlFor="f-type" className={labelCls}>
+            Type Naskah
+          </label>
+          <select
+            id="f-type"
+            value={filter.typeNaskah}
+            onChange={(e) => set('typeNaskah', e.target.value)}
+            className={selectCls}
+          >
+            <option value="">Semua Type</option>
+            {typeOptions.map((t) => (
+              <option key={t} value={t}>
+                {t}
               </option>
             ))}
           </select>

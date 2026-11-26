@@ -1,10 +1,11 @@
-﻿/**
+/**
  * HRIS PPSDMPU — Google Apps Script Web App
  *
  * Endpoint:
- *   GET ?resource=all       → { employees: RemoteEmployeeRow[], leave: RemoteLeaveYearRow[] }
- *   GET ?resource=employees  → RemoteEmployeeRow[]   (backward-compat)
- *   GET ?resource=leave      → RemoteLeaveYearRow[]  (backward-compat)
+ *   GET ?resource=all         → { employees: RemoteEmployeeRow[], leave: RemoteLeaveYearRow[] }
+ *   GET ?resource=employees   → RemoteEmployeeRow[]   (backward-compat)
+ *   GET ?resource=leave       → RemoteLeaveYearRow[]  (backward-compat)
+ *   GET ?resource=persuratan  → NaskahItem[]
  *
  * Deploy sebagai Web App:
  *   - Execute as: Me
@@ -42,6 +43,11 @@
 
 var SPREADSHEET_ID = '1Xjan2kKN0gpOXAb_cALqT6Eb1frv79NfS7LBh1WIk7o';
 var SHEET_NAME = 'DUK';
+
+var PERSURATAN_SPREADSHEET_ID = '17qiF2ZrxbrQrHopfVuaUFxKBfkS4YBqNiktS2Xm0UUg';
+var PERSURATAN_SHEET_NAME = 'Persuratan';
+var PERSURATAN_DATA_START_ROW = 2;
+var PERSURATAN_LAST_COL = 9;
 
 /**
  * Baris data pertama (1-indexed). Sheet DUK memiliki 7 baris header:
@@ -97,8 +103,10 @@ function doGet(e) {
       data = getEmployees_();
     } else if (resource === 'leave') {
       data = getLeaveRecords_();
+    } else if (resource === 'persuratan') {
+      data = getPersuratan_();
     } else {
-      return errorResponse_('Parameter ?resource= tidak valid. Gunakan "all", "employees", atau "leave".');
+      return errorResponse_('Parameter ?resource= tidak valid. Gunakan "all", "employees", "leave", atau "persuratan".');
     }
     return jsonResponse_(data);
   } catch (err) {
@@ -285,6 +293,48 @@ function buildLeaveRecords_(rows) {
   return result;
 }
 
+// === Persuratan Resource ===
+
+function getPersuratan_() {
+  var ss    = SpreadsheetApp.openById(PERSURATAN_SPREADSHEET_ID);
+  var sheet = ss.getSheetByName(PERSURATAN_SHEET_NAME);
+
+  if (!sheet) {
+    throw new Error('Sheet Persuratan tidak ditemukan.');
+  }
+
+  var lastRow = sheet.getLastRow();
+  if (lastRow < PERSURATAN_DATA_START_ROW) {
+    return [];
+  }
+
+  var numRows = lastRow - PERSURATAN_DATA_START_ROW + 1;
+  var numCols = Math.min(PERSURATAN_LAST_COL, sheet.getLastColumn());
+  var rows    = sheet.getRange(PERSURATAN_DATA_START_ROW, 1, numRows, numCols).getValues();
+  var result  = [];
+
+  for (var i = 0; i < rows.length; i++) {
+    var r = rows[i];
+    var kelompok = toString_(r[1]);
+    var uraian   = toString_(r[4]);
+    if (!kelompok && !uraian) continue;
+
+    result.push({
+      noUrut:          toNumber_(r[0]) || (i + 1),
+      kelompokNaskah:  kelompok || '',
+      jenisNaskah:     toString_(r[2]) || '',
+      sifatNaskah:     normalizeSifat_(r[3]),
+      uraianInformasi: uraian || '',
+      tanggalDiterima: toIndoOrISODate_(r[5]) || null,
+      tanggalNaskah:   toISODate_(r[6]) || null,
+      typeNaskah:      normalizeDash_(r[7]),
+      konseptorOpr:    normalizeDash_(r[8])
+    });
+  }
+
+  return result;
+}
+
 // === Helper: Sheet Access ===
 
 /**
@@ -370,6 +420,45 @@ function toISODate_(value) {
 
 function toDateString_(value) {
   return toISODate_(value);
+}
+
+function normalizeDash_(value) {
+  var s = toString_(value);
+  if (!s || s === '-') return null;
+  return s;
+}
+
+function normalizeSifat_(value) {
+  var s = toString_(value);
+  if (!s) return 'Biasa';
+  var lower = s.toLowerCase();
+  if (lower === 'biasa') return 'Biasa';
+  if (lower === 'rahasia') return 'Rahasia';
+  return s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
+}
+
+var BULAN_INDO_MAP = {
+  januari: '01', februari: '02', maret: '03', april: '04',
+  mei: '05', juni: '06', juli: '07', agustus: '08',
+  september: '09', oktober: '10', november: '11', desember: '12'
+};
+
+function toIndoOrISODate_(value) {
+  if (value === null || value === undefined || value === '' || value === '-') return undefined;
+  var iso = toISODate_(value);
+  if (iso) return iso;
+
+  var s = String(value).trim().toLowerCase();
+  var parts = s.split(/\s+/);
+  if (parts.length === 3) {
+    var d = parts[0].padStart(2, '0');
+    var m = BULAN_INDO_MAP[parts[1]];
+    var y = parts[2];
+    if (m && y && d && /^\d{4}$/.test(y) && /^\d{2}$/.test(d)) {
+      return y + '-' + m + '-' + d;
+    }
+  }
+  return undefined;
 }
 
 // === Helper: HTTP Response ===

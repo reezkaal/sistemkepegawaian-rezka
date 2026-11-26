@@ -147,6 +147,23 @@ export default defineConfig(({ mode }) => {
           .catch(next)
       })
 
+      server.middlewares.use('/api/persuratan', (req, res, next) => {
+        verifyDevCaller(req.headers.authorization)
+          .then(async (auth) => {
+            if (!auth.ok) {
+              res.statusCode = auth.status
+              res.setHeader('Content-Type', 'application/json')
+              res.end(auth.body)
+              return
+            }
+            const { status, body } = await proxyToGas('persuratan')
+            res.statusCode = status
+            res.setHeader('Content-Type', 'application/json')
+            res.end(body)
+          })
+          .catch(next)
+      })
+
       // Dev proxy untuk /api/auth/create-user
       server.middlewares.use('/api/auth/create-user', async (req, res, next) => {
         if (req.method !== 'POST') {
