@@ -5,7 +5,7 @@
  * "naskahmsk-klr".
  */
 
-import { RotateCw, Info } from 'lucide-react'
+import { RotateCw, AlertCircle } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import PersuratanSummaryCards from '@/components/persuratan/PersuratanSummaryCards'
 import PersuratanFilters from '@/components/persuratan/PersuratanFilters'
@@ -83,20 +83,17 @@ export default function Persuratan() {
         </div>
       </div>
 
-      {/* Status Banner jika belum terhubung */}
-      {dataSourceStatus !== 'connected' && (
-        <div className="flex gap-2.5 rounded-xl border border-border bg-primary-soft/40 p-4">
-          <Info className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
-          <div className="text-xs">
-            <p className="font-semibold text-foreground">
-              {dataSourceStatus === 'error'
-                ? 'Gagal terhubung ke sumber data persuratan.'
-                : 'Sumber data eksternal belum terhubung.'}
-            </p>
-            <p className="mt-0.5 text-muted-foreground">
-              Hubungkan endpoint Google Apps Script di{' '}
-              <code className="rounded bg-secondary px-1 py-0.5 text-[11px]">src/services/persuratan.ts</code>{' '}
-              untuk sinkronisasi otomatis.
+      {/* Banner Error jika gagal memuat data */}
+      {!isLoading && dataSourceStatus === 'error' && (
+        <div
+          role="alert"
+          className="flex items-start gap-2.5 rounded-xl border border-destructive/30 bg-destructive/10 p-4 text-xs text-destructive"
+        >
+          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+          <div>
+            <p className="font-semibold">Gagal memuat data persuratan.</p>
+            <p className="mt-0.5 text-destructive/85">
+              Periksa koneksi internet Anda lalu klik tombol Refresh untuk mencoba lagi.
             </p>
           </div>
         </div>
