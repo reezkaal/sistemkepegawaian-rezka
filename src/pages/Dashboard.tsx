@@ -85,8 +85,8 @@ export default function Dashboard() {
 
   // Data chart — dari service, tidak ada filter/limit di sini
   const golonganData = chartData?.golongan ?? []
-  const satkerData   = (chartData?.satker   ?? []).map((d) => ({ label: d.satker,   jumlah: d.jumlah }))
-  const bidangData   = (chartData?.bidang   ?? []).map((d) => ({ label: d.bidang,   jumlah: d.jumlah }))
+  const satkerData = (chartData?.satker ?? []).map((d) => ({ label: d.satker, jumlah: d.jumlah }))
+  const bidangData = (chartData?.bidang ?? []).map((d) => ({ label: d.bidang, jumlah: d.jumlah }))
 
   // Satker & Bidang/Bagian berbagi SATU tinggi chart (berdasarkan kategori
   // terbanyak di antara keduanya) supaya kedua card sejajar dalam satu row
@@ -119,7 +119,7 @@ export default function Dashboard() {
               Data Kepegawaian
             </h1>
             <p className="mt-1 text-sm text-muted-foreground">
-              PPSDMPU — Pusat Pengembangan Sumber Daya Manusia Perhubungan Udara
+              PPSDMPU - Pusat Pengembangan SDM Perhubungan Udara
             </p>
           </div>
 
