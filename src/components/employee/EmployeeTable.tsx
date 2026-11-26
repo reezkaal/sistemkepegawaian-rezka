@@ -25,8 +25,10 @@ function NamaSortIcon({ direction }: { direction: NamaSortDirection }) {
 const COLUMN_COUNT = 8
 
 /** Warna badge Status Kepegawaian - solid, tanpa gradient (lihat CLAUDE.md § 4). */
-function statusTone(status: string): 'secondary' | 'success' {
-  return status === 'PNS' ? 'secondary' : 'success'
+function statusTone(status: string): 'secondary' | 'success' | 'warning' {
+  if (status === 'PNS') return 'secondary'
+  if (status === 'PPPK') return 'success'
+  return 'warning'
 }
 
 function EmployeeRowSkeleton() {
@@ -133,7 +135,9 @@ export default function EmployeeTable({
                 <td className="px-4 py-3 text-muted-foreground">{employee.satker || '-'}</td>
                 <td className="px-4 py-3">
                   <Badge tone={statusTone(employee.statusKepegawaian)}>
-                    {employee.statusKepegawaian || '-'}
+                    {employee.statusKepegawaian && employee.statusKepegawaian !== '-'
+                      ? employee.statusKepegawaian
+                      : 'OS'}
                   </Badge>
                 </td>
                 <td className="px-4 py-3">

@@ -81,7 +81,7 @@ export default function Sidebar({ onNavigate, collapsed = false, onToggleCollaps
                       ? 'h-10 w-10 mx-auto justify-center'
                       : 'gap-3 px-3 py-2.5',
                     isActive
-                      ? 'bg-primary-soft text-primary shadow-none'
+                      ? 'bg-primary text-primary-foreground shadow-sm'
                       : 'text-muted-foreground hover:bg-secondary hover:text-foreground',
                   )
                 }
@@ -92,13 +92,13 @@ export default function Sidebar({ onNavigate, collapsed = false, onToggleCollaps
                       className={cn(
                         'shrink-0 transition-colors',
                         collapsed ? 'h-5 w-5' : 'h-[18px] w-[18px]',
-                        isActive ? 'text-primary' : 'text-muted-foreground group-hover:text-foreground',
+                        isActive ? 'text-primary-foreground' : 'text-muted-foreground group-hover:text-foreground',
                       )}
                       aria-hidden="true"
                     />
                     {!collapsed && <span>{label}</span>}
                     {!collapsed && isActive && (
-                      <span className="ml-auto h-1.5 w-1.5 rounded-full bg-primary" aria-hidden="true" />
+                      <span className="ml-auto h-1.5 w-1.5 rounded-full bg-primary-foreground/85" aria-hidden="true" />
                     )}
                   </>
                 )}

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Users, UserCheck, UserX, ShieldCheck, Briefcase, RotateCw, AlertCircle, X } from 'lucide-react'
+import { Users, UserCheck, UserX, ShieldCheck, Briefcase, HelpCircle, RotateCw, AlertCircle, X } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import EmployeeFilters from '@/components/employee/EmployeeFilters'
 import EmployeeTable from '@/components/employee/EmployeeTable'
@@ -18,7 +18,7 @@ function SummaryChip({
   icon: typeof Users
   label: string
   value: number
-  tone: 'violet' | 'primary' | 'success' | 'muted'
+  tone: 'violet' | 'primary' | 'success' | 'muted' | 'amber'
   active?: boolean
   onClick?: () => void
 }) {
@@ -27,6 +27,7 @@ function SummaryChip({
     primary: 'bg-primary-soft text-primary',
     success: 'bg-success/10 text-success',
     muted: 'bg-muted text-muted-foreground',
+    amber: 'bg-amber/15 text-amber',
   }[tone]
 
   const content = (
@@ -163,8 +164,8 @@ export default function Employees() {
         </div>
       )}
 
-      {/* Summary kecil: Total Pegawai, Aktif, Tidak Aktif, PNS, PPPK */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+      {/* Summary kecil: Total Pegawai, Aktif, Tidak Aktif, PNS, PPPK, OS */}
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
         <SummaryChip icon={Users} label="Total Pegawai" value={summary.total} tone="violet" />
         <SummaryChip
           icon={UserCheck}
@@ -184,6 +185,14 @@ export default function Employees() {
         />
         <SummaryChip icon={ShieldCheck} label="Pegawai PNS" value={summary.totalPNS} tone="primary" />
         <SummaryChip icon={Briefcase} label="Pegawai PPPK" value={summary.totalPPPK} tone="success" />
+        <SummaryChip
+          icon={HelpCircle}
+          label="Pegawai OS"
+          value={summary.totalOS}
+          tone="amber"
+          active={statusFilter === 'OS'}
+          onClick={() => setStatusFilter((prev) => (prev === 'OS' ? '' : 'OS'))}
+        />
       </div>
 
       <Card>

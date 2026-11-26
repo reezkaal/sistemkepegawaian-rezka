@@ -33,7 +33,7 @@ interface UseEmployeeListResult {
   totalPages: number
   setPage: (page: number) => void
   /** Ringkasan TIDAK terfilter (dihitung dari seluruh data), untuk summary strip halaman Pegawai. */
-  summary: { total: number; totalAktif: number; totalTidakAktif: number; totalPNS: number; totalPPPK: number }
+  summary: { total: number; totalAktif: number; totalTidakAktif: number; totalPNS: number; totalPPPK: number; totalOS: number }
   /** Arah sorting kolom Nama saat ini (`null` = belum di-sort). */
   namaSortDirection: NamaSortDirection
   /** Toggle sorting Nama: null -> asc -> desc -> null. */
@@ -129,7 +129,12 @@ export function useEmployeeList(
   }, [allEmployees])
 
   const statusOptions = useMemo(() => {
-    const values = new Set(allEmployees.map((e) => e.statusKepegawaian))
+    const values = new Set(
+      allEmployees.map((e) => {
+        const s = e.statusKepegawaian?.trim()
+        return !s || s === '-' ? 'OS' : s
+      }),
+    )
     return Array.from(values).sort((a, b) => a.localeCompare(b))
   }, [allEmployees])
 
@@ -146,7 +151,12 @@ export function useEmployeeList(
       if (nip && !e.nip.toLowerCase().includes(nip)) return false
       if (satkerFilter && e.satker !== satkerFilter) return false
       if (bidangFilter && e.bidangBagian !== bidangFilter) return false
-      if (statusFilter && e.statusKepegawaian !== statusFilter) return false
+      if (statusFilter === 'OS') {
+        const s = e.statusKepegawaian?.trim()
+        if (s === 'PNS' || s === 'PPPK') return false
+      } else if (statusFilter && e.statusKepegawaian !== statusFilter) {
+        return false
+      }
       if (aktifFilter === 'aktif' && !e.statusAktif) return false
       if (aktifFilter === 'tidak_aktif' && e.statusAktif) return false
       return true
@@ -196,13 +206,15 @@ export function useEmployeeList(
     let totalTidakAktif = 0
     let totalPNS = 0
     let totalPPPK = 0
+    let totalOS = 0
     for (const e of allEmployees) {
       if (e.statusAktif) totalAktif += 1
       else totalTidakAktif += 1
       if (e.statusKepegawaian === 'PNS') totalPNS += 1
       else if (e.statusKepegawaian === 'PPPK') totalPPPK += 1
+      else totalOS += 1
     }
-    return { total: allEmployees.length, totalAktif, totalTidakAktif, totalPNS, totalPPPK }
+    return { total: allEmployees.length, totalAktif, totalTidakAktif, totalPNS, totalPPPK, totalOS }
   }, [allEmployees])
 
   return {
