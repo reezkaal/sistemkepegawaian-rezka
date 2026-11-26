@@ -126,34 +126,36 @@ export default function EmployeeDetail() {
 
       {/* ── 1. Header / Profil Pegawai ─────────────────────────────── */}
       <Card>
-        <CardHeader className="flex flex-row items-start gap-4 space-y-0">
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary-soft">
-            <User className="h-6 w-6 text-primary" aria-hidden="true" />
-          </div>
-          <div className="min-w-0 flex-1">
-            <CardTitle className="leading-snug">{namaLengkap}</CardTitle>
-            <p className="mt-1 text-sm text-muted-foreground">NIP: {employee.nip}</p>
-            {employee.jabatan && (
-              <p className="mt-0.5 text-sm text-muted-foreground">{employee.jabatan}</p>
-            )}
-            {typeof employee.aktifBulanCount === 'number' && (
-              <p className="mt-1.5 text-xs text-muted-foreground">
-                Masa Aktif Kantor:{' '}
-                <span className="font-medium text-foreground">
-                  {employee.aktifBulanCount > 0 &&
-                  (employee.aktifPeriode || (employee.aktifMulai && employee.aktifSampai))
-                    ? `${employee.aktifBulanCount} bulan (${employee.aktifPeriode ?? `${employee.aktifMulai} – ${employee.aktifSampai}`})`
-                    : `${employee.aktifBulanCount} bulan (belum ada centang aktif)`}
-                </span>
-              </p>
-            )}
+        <CardHeader className="flex flex-col gap-3 space-y-0 sm:flex-row sm:items-start sm:gap-4">
+          <div className="flex min-w-0 flex-1 items-start gap-3.5 sm:gap-4">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary/15 ring-1 ring-primary/20">
+              <User className="h-6 w-6 text-primary" aria-hidden="true" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <CardTitle className="leading-snug">{namaLengkap}</CardTitle>
+              <p className="mt-1 text-sm tabular-nums text-muted-foreground">NIP: {employee.nip}</p>
+              {employee.jabatan && (
+                <p className="mt-0.5 text-sm text-muted-foreground">{employee.jabatan}</p>
+              )}
+              {typeof employee.aktifBulanCount === 'number' && (
+                <p className="mt-1.5 text-xs text-muted-foreground">
+                  Masa Aktif Kantor:{' '}
+                  <span className="font-medium text-foreground">
+                    {employee.aktifBulanCount > 0 &&
+                    (employee.aktifPeriode || (employee.aktifMulai && employee.aktifSampai))
+                      ? `${employee.aktifBulanCount} bulan (${employee.aktifPeriode ?? `${employee.aktifMulai} – ${employee.aktifSampai}`})`
+                      : `${employee.aktifBulanCount} bulan (belum ada centang aktif)`}
+                  </span>
+                </p>
+              )}
+            </div>
           </div>
           <div className="flex shrink-0 flex-wrap items-center gap-2">
             <Badge tone={employee.statusAktif ? 'success' : 'muted'}>
               {employee.statusAktif ? 'Aktif' : 'Tidak Aktif'}
             </Badge>
             <Badge tone={employee.statusKepegawaian === 'PNS' ? 'secondary' : 'success'}>
-              {employee.statusKepegawaian}
+              {employee.statusKepegawaian || 'OS'}
             </Badge>
           </div>
         </CardHeader>

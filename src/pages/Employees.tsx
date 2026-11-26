@@ -126,11 +126,11 @@ export default function Employees() {
   // Format jam pembaruan terakhir (HH:mm:ss WIB)
   const formattedLastUpdated = lastUpdated
     ? new Intl.DateTimeFormat('id-ID', {
-        timeZone: 'Asia/Jakarta',
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-      }).format(lastUpdated)
+      timeZone: 'Asia/Jakarta',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+    }).format(lastUpdated)
     : null
 
   return (
